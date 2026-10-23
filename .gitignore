@@ -5,3 +5,5 @@ lib
 .pytest_cache/
 .envrc
 __pycache__
+env/
+.venv/
