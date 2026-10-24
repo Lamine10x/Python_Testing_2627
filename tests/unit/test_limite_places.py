@@ -62,3 +62,32 @@ def test_reservation_cumulee_superieure_a_12_places_refusee(client):
 
     texte_reponse = html.unescape(response_2.get_data(as_text=True))
     assert "Vous ne pouvez pas réserver plus de 12 places au total pour une compétition." in texte_reponse
+
+
+def test_surreservation_places_competition_refusee(client):
+    """Vérifie qu'un club ne peut pas réserver plus de places que le stock restant de la compétition."""
+    from server import clubs, competitions
+
+    club = [c for c in clubs if c['name'] == 'Simply Lift'][0]
+    competition = [c for c in competitions if c['name'] == 'Spring Festival'][0]
+
+    # Réinitialise le suivi des réservations
+    club.setdefault('booked', {})[competition['name']] = 0
+
+    # On simule une compétition avec seulement 2 places disponibles
+    competition['numberOfPlaces'] = 2
+    club['points'] = 10  # Le club a assez de points
+
+    # On tente de réserver 4 places (<= 12 et <= points du club, mais > 2 places disponibles)
+    response = client.post('/purchasePlaces', data={
+        'club': club['name'],
+        'competition': competition['name'],
+        'places': '4'
+    })
+
+    assert response.status_code == 400
+    assert int(competition['numberOfPlaces']) == 2
+    assert int(club['points']) == 10
+
+    texte_reponse = html.unescape(response.get_data(as_text=True))
+    assert "Il n'y a pas assez de places disponibles dans cette compétition." in texte_reponse
