@@ -40,25 +40,49 @@ def showSummary():
 
 @app.route('/book/<competition>/<club>')
 def book(competition, club):
-    foundClub = [c for c in clubs if c['name'] == club][0]
-    foundCompetition = [c for c in competitions if c['name'] == competition][0]
+    matching_clubs = [c for c in clubs if c['name'] == club]
+    matching_competitions = [c for c in competitions if c['name'] == competition]
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    if foundClub and foundCompetition:
-        competition_date = datetime.strptime(foundCompetition['date'], '%Y-%m-%d %H:%M:%S')
-        if competition_date < datetime.now():
-            flash("Vous ne pouvez pas réserver pour une compétition déjà passée.")
-            return render_template('welcome.html', club=foundClub, competitions=competitions, now=now), 400
-        return render_template('booking.html', club=foundClub, competition=foundCompetition)
-    else:
-        flash("Something went wrong-please try again")
-        return render_template('welcome.html', club=foundClub, competitions=competitions, now=now)
+
+    if not matching_clubs:
+        flash("Club introuvable.")
+        return render_template('index.html'), 404
+
+    foundClub = matching_clubs[0]
+
+    if not matching_competitions:
+        flash("Compétition introuvable.")
+        return render_template('welcome.html', club=foundClub, competitions=competitions, now=now), 404
+
+    foundCompetition = matching_competitions[0]
+
+    competition_date = datetime.strptime(foundCompetition['date'], '%Y-%m-%d %H:%M:%S')
+    if competition_date < datetime.now():
+        flash("Vous ne pouvez pas réserver pour une compétition déjà passée.")
+        return render_template('welcome.html', club=foundClub, competitions=competitions, now=now), 400
+
+    return render_template('booking.html', club=foundClub, competition=foundCompetition)
 
 
 @app.route('/purchasePlaces', methods=['POST'])
 def purchasePlaces():
-    competition = [c for c in competitions if c['name'] == request.form['competition']][0]
-    club = [c for c in clubs if c['name'] == request.form['club']][0]
+    comp_name = request.form.get('competition')
+    club_name = request.form.get('club')
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    matching_clubs = [c for c in clubs if c['name'] == club_name]
+    if not matching_clubs:
+        flash("Club introuvable.")
+        return render_template('index.html'), 404
+
+    club = matching_clubs[0]
+
+    matching_competitions = [c for c in competitions if c['name'] == comp_name]
+    if not matching_competitions:
+        flash("Compétition introuvable.")
+        return render_template('welcome.html', club=club, competitions=competitions, now=now), 404
+
+    competition = matching_competitions[0]
 
     competition_date = datetime.strptime(competition['date'], '%Y-%m-%d %H:%M:%S')
     if competition_date < datetime.now():
