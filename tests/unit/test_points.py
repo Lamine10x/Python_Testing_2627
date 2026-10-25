@@ -1,5 +1,7 @@
 import html
 
+import server
+
 
 def test_deduction_points_apres_reservation(client):
     """Vérifie la déduction des points et des places après réservation."""
@@ -24,6 +26,29 @@ def test_deduction_points_apres_reservation(client):
         places_initiales - places_a_reserver
     )
     assert b"Great-booking complete!" in response.data
+
+
+def test_reservation_enregistre_places_et_donnees(client, monkeypatch):
+    """Une réservation met à jour le suivi et sauvegarde les fichiers."""
+    from server import clubs, competitions
+
+    club = [c for c in clubs if c['name'] == 'Simply Lift'][0]
+    competition = [c for c in competitions if c['name'] == 'Future Open'][0]
+    calls = []
+    monkeypatch.setattr(server, 'saveClubs', lambda: calls.append('clubs'))
+    monkeypatch.setattr(
+        server, 'saveCompetitions', lambda: calls.append('competitions')
+    )
+
+    response = client.post('/purchasePlaces', data={
+        'club': club['name'],
+        'competition': competition['name'],
+        'places': '3',
+    })
+
+    assert response.status_code == 200
+    assert club['booked'][competition['name']] == 3
+    assert calls == ['clubs', 'competitions']
 
 
 def test_reservation_points_insuffisants(client):

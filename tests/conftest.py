@@ -10,6 +10,13 @@ import server  # noqa: E402
 from server import app  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def prevent_disk_writes(monkeypatch):
+    """Evite d'ecrire dans les fichiers JSON pendant les tests."""
+    monkeypatch.setattr(server, 'saveClubs', lambda: None)
+    monkeypatch.setattr(server, 'saveCompetitions', lambda: None)
+
+
 @pytest.fixture
 def client():
     app.config['TESTING'] = True

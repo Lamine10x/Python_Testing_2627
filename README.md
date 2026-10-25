@@ -45,9 +45,18 @@ compétitions.
 - Page publique accessible sans connexion :
   - `/displayBoard`
   - alias `/points`
-- Affichage de tous les clubs et de leurs points.
+- Affichage de tous les clubs et de leurs points, triés par points décroissants.
 - Classement avec mise en avant des trois premiers clubs.
+- Sélecteur de compétition sur le classement public :
+  - classement général des points des clubs ;
+  - classement par compétition basé sur les places réservées ;
+  - affichage de la date, des places restantes et de l'état des inscriptions ;
+  - état vide lorsqu'aucune place n'a encore été réservée.
+- Exemple de classement par compétition :
+  `/displayBoard?competition=Future%20Open`.
 - Liens vers le classement depuis la page d'accueil et le tableau de bord club.
+- Les réservations sont enregistrées dans le champ `booked` de chaque club,
+  ce qui permet de conserver le classement par compétition après redémarrage.
 
 ### Interface d'administration
 
@@ -189,7 +198,7 @@ Le rapport HTML est disponible dans `htmlcov/index.html`.
 ### Résultat actuel
 
 ```text
-88 tests passent
+94 tests passent
 Couverture de server.py : 100 %
 ```
 

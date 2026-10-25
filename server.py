@@ -218,6 +218,8 @@ def purchasePlaces():
     competition['numberOfPlaces'] = places_int
     club['points'] = int(club['points']) - placesRequired
     booked[competition['name']] = already_booked + placesRequired
+    saveClubs()
+    saveCompetitions()
     flash('Great-booking complete!')
     return render_template(
         'welcome.html', club=club, competitions=competitions, now=now
@@ -227,7 +229,45 @@ def purchasePlaces():
 @app.route('/displayBoard')
 @app.route('/points')
 def displayBoard():
-    return render_template('display_board.html', clubs=clubs)
+    selected_name = request.args.get('competition', '').strip()
+    selected_competition = next(
+        (c for c in competitions if c['name'] == selected_name), None
+    )
+
+    if selected_competition:
+        competition_ranking = []
+        for club in clubs:
+            booked_places = int(
+                club.get('booked', {}).get(selected_name, 0)
+            )
+            if booked_places > 0:
+                competition_ranking.append({
+                    **club,
+                    'booked_places': booked_places,
+                })
+        competition_ranking.sort(
+            key=lambda c: (
+                -c['booked_places'], -int(c['points']), c['name']
+            )
+        )
+        return render_template(
+            'display_board.html',
+            clubs=[],
+            competitions=competitions,
+            selected_competition=selected_competition,
+            competition_ranking=competition_ranking,
+        )
+
+    sorted_clubs = sorted(
+        clubs, key=lambda c: (-int(c['points']), c['name'])
+    )
+    return render_template(
+        'display_board.html',
+        clubs=sorted_clubs,
+        competitions=competitions,
+        selected_competition=None,
+        competition_ranking=[],
+    )
 
 
 @app.route('/logout')
@@ -398,7 +438,13 @@ def adminAddClub():
         if not name or not email:
             flash("Nom et email requis.")
             return redirect(url_for('adminAddClub'))
-        clubs.append({'name': name, 'email': email, 'points': points})
+        clubs.append({
+            'name': name,
+            'email': email,
+            'points': points,
+            'points_history': [],
+            'booked': {},
+        })
         saveClubs()
         flash(f"Club '{name}' ajouté.")
         return redirect(url_for('adminClubs'))
