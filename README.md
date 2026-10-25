@@ -11,6 +11,7 @@ compétitions.
 ## Sommaire
 
 - [Fonctionnalités](#fonctionnalités)
+- [Documentation PDF](#documentation-pdf)
 - [Technologies](#technologies)
 - [Installation](#installation)
 - [Lancement](#lancement)
@@ -94,6 +95,24 @@ compétitions.
 - Accès rapide : dans `Admin > Clubs`, le bouton `Points` ouvre la gestion
   des points ; dans `Admin > Compétitions`, le bouton `Fermer` ou `Ouvrir`
   change l'état des inscriptions.
+
+## Documentation PDF
+
+Un document PDF complet de 45 pages est disponible à la racine du projet :
+
+- [`GUDLFT_Documentation_Fonctionnalites_Bugs.pdf`](GUDLFT_Documentation_Fonctionnalites_Bugs.pdf)
+
+Il présente :
+
+- le contexte, le besoin et le périmètre ;
+- l'architecture, les données et les règles métier ;
+- l'utilité détaillée des fonctionnalités ajoutées ;
+- des scénarios de bout en bout ;
+- la résolution des bugs, avec symptôme, cause, correction et tests ;
+- la traçabilité des exigences ;
+- les résultats de qualité, performance et sécurité ;
+- les limites, les améliorations et les annexes (routes, données, tests,
+  commandes, glossaire, comptes de démonstration).
 
 ## Technologies
 
@@ -287,8 +306,9 @@ Les seuils du cahier des charges sont respectés :
 
 - Branche principale : `main`.
 - Branches de travail : `<type>/nom-descriptif`, par exemple
-  `bug/correction-reservation` ou `feature/tableau-public`.
-- Types utilisés : `bug/`, `feature/` et `improvement/`.
+  `bug/correction-reservation`, `feature/tableau-public` ou
+  `docs/documentation-pdf`.
+- Types utilisés : `bug/`, `feature/`, `improvement/` et `docs/`.
 - Une branche porte un seul correctif ou une seule fonctionnalité.
 - Les branches mergées sont conservées pour garder la traçabilité.
 
@@ -338,6 +358,7 @@ dans `main` :
 | --- | --- | --- |
 | `main` | dernier commit | Branche de livraison |
 | `QA` | = `main` | Miroir de `main` pour la revue finale |
+| `docs/pdf-documentation-fonctionnalites-bugs` | — | Mergée |
 | `feature/gestion-points-et-inscriptions` | `06cd9b0` | Mergée |
 | `feature/classement-public-par-competition` | `8e5f975` | Mergée |
 | `feature/tableau-de-bord-admin` | `88aa5ca` | Mergée |
@@ -347,11 +368,16 @@ dans `main` :
 Historique récent :
 
 ```text
-*   Merge : classement public par competition
+*   Merge : documentation PDF fonctionnalites et bugs
 |\
+| * Docs : ajout du PDF de documentation
+* |   Merge : classement public par competition
+|\ \
+| |/
 | * Feature : classement public par competition
-* | Merge : gestion des points et des inscriptions
-|\|
+* |   Merge : gestion des points et des inscriptions
+|\ \
+| |/
 | * Feature : gestion des points et des inscriptions
 |/
 * Fix : chargement de admin.json avec BOM UTF-8
@@ -378,6 +404,8 @@ Les deux commandes ne doivent retourner aucune branche.
 ├── generate_flake8_report.py # Générateur du rapport Flake8 HTML
 ├── rapport_flake8.html       # Rapport Flake8 généré
 ├── rapport_locust.html       # Rapport de performance Locust
+├── GUDLFT_Documentation_Fonctionnalites_Bugs.pdf
+│                             # Documentation fonctionnelle et technique
 ├── requirements.txt          # Dépendances Python
 ├── static/
 │   └── css/
