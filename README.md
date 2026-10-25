@@ -177,14 +177,23 @@ Couverture de server.py : 100 %
 Commande utilisée :
 
 ```powershell
-flake8 server.py tests/ locustfile.py --count --statistics --show-source
+flake8 server.py tests/ locustfile.py generate_flake8_report.py --count --statistics --show-source
 ```
+
+Générer le rapport HTML :
+
+```powershell
+python generate_flake8_report.py
+```
+
+Puis ouvrir `rapport_flake8.html` dans le navigateur.
 
 Résultat :
 
 ```text
 Version Flake8 : 7.4.1
-Fichiers analysés : server.py, tests/, locustfile.py
+Fichiers analysés : server.py, tests/, locustfile.py,
+                    generate_flake8_report.py
 Nombre d'erreurs : 0
 ```
 
@@ -231,8 +240,9 @@ le classement public, le formulaire de réservation et les routes admin.
 ├── competitions.json         # Compétitions et places
 ├── admin.json                # Comptes administrateur
 ├── locustfile.py             # Scénario de test de performance
+├── generate_flake8_report.py # Générateur du rapport Flake8 HTML
+├── rapport_flake8.html       # Rapport Flake8 généré
 ├── requirements.txt          # Dépendances Python
-├── LANCEMENT.txt             # Aide-mémoire des commandes
 ├── static/
 │   └── css/
 │       └── style.css         # Styles de l'application
