@@ -170,7 +170,7 @@ Le rapport HTML est disponible dans `htmlcov/index.html`.
 ### Résultat actuel
 
 ```text
-66 tests passent
+67 tests passent
 Couverture de server.py : 100 %
 ```
 

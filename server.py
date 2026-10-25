@@ -7,7 +7,7 @@ from flask import (
 
 
 def loadClubs():
-    with open('clubs.json') as c:
+    with open('clubs.json', encoding='utf-8-sig') as c:
         listOfClubs = json.load(c)['clubs']
         for club in listOfClubs:
             club['points'] = int(club['points'])
@@ -15,7 +15,7 @@ def loadClubs():
 
 
 def loadCompetitions():
-    with open('competitions.json') as comps:
+    with open('competitions.json', encoding='utf-8-sig') as comps:
         listOfCompetitions = json.load(comps)['competitions']
         for comp in listOfCompetitions:
             comp['numberOfPlaces'] = int(comp['numberOfPlaces'])

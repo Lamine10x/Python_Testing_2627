@@ -384,6 +384,19 @@ def test_admin_logout(client):
         assert 'admin_name' not in sess
 
 
+def test_load_admins_accepts_utf8_bom(tmp_path, monkeypatch):
+    """Le chargement des admins tolere un fichier UTF-8 avec BOM."""
+    admin_file = tmp_path / 'admin.json'
+    admin_file.write_bytes(
+        b'\xef\xbb\xbf[{"email": "a@b.c", "password": "x", "name": "A"}]'
+    )
+    monkeypatch.chdir(tmp_path)
+
+    admins = server.loadAdmins()
+
+    assert admins[0]['email'] == 'a@b.c'
+
+
 def test_save_functions_write_json(tmp_path, monkeypatch):
     """Les fonctions de sauvegarde ecrivent bien les donnees JSON."""
     monkeypatch.chdir(tmp_path)
