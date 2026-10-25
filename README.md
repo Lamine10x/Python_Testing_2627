@@ -12,7 +12,6 @@ compétitions.
 ## Sommaire
 
 - [Fonctionnalités](#fonctionnalités)
-- [Documentation PDF](#documentation-pdf)
 - [Technologies](#technologies)
 - [Installation](#installation)
 - [Lancement](#lancement)
@@ -130,28 +129,6 @@ compétitions.
 - Accès rapide : dans `Admin > Clubs`, le bouton `Points` ouvre la gestion
   des points ; dans `Admin > Compétitions`, le bouton `Fermer` ou `Ouvrir`
   change l'état des inscriptions.
-
-## Documentation PDF
-
-Un document PDF complet de 45 pages est disponible à la racine du projet :
-
-- [`GUDLFT_Documentation_Fonctionnalites_Bugs.pdf`](GUDLFT_Documentation_Fonctionnalites_Bugs.pdf)
-
-Il présente :
-
-- le contexte, le besoin et le périmètre ;
-- l'architecture, les données et les règles métier ;
-- l'utilité détaillée des fonctionnalités ajoutées ;
-- des scénarios de bout en bout ;
-- la résolution des bugs, avec symptôme, cause, correction et tests ;
-- la traçabilité des exigences ;
-- les résultats de qualité, performance et sécurité ;
-- les limites, les améliorations et les annexes (routes, données, tests,
-  commandes, glossaire, comptes de démonstration).
-
-Le PDF documente la livraison précédente. Les lots 2 à 4 de l'espace club
-(réservations, quota, récapitulatif et historique des points) sont détaillés
-dans la section [Espace club — réservations et points](#espace-club--réservations-et-points).
 
 ## Technologies
 
@@ -397,7 +374,8 @@ dans `main` :
 | --- | --- | --- |
 | `main` | dernier commit | Branche de livraison |
 | `QA` | = `main` | Miroir de `main` pour la revue finale |
-| `feature/espace-club-reservations-historique` | — | Mergée |
+| `feature/espace-club-reservations-historique` | `1302182` | Mergée |
+| `docs/retrait-reference-pdf-supprime` | — | Mergée |
 | `docs/pdf-documentation-fonctionnalites-bugs` | — | Mergée |
 | `feature/gestion-points-et-inscriptions` | `06cd9b0` | Mergée |
 | `feature/classement-public-par-competition` | `8e5f975` | Mergée |
@@ -408,6 +386,10 @@ dans `main` :
 Historique récent :
 
 ```text
+*   Merge : retrait reference PDF supprime
+|\
+| * Docs : retrait reference PDF supprime
+|/
 *   Merge : espace club reservations et historique
 |\
 | * Feature : mes reservations quota et historique des points
@@ -448,8 +430,6 @@ Les deux commandes ne doivent retourner aucune branche.
 ├── generate_flake8_report.py # Générateur du rapport Flake8 HTML
 ├── rapport_flake8.html       # Rapport Flake8 généré
 ├── rapport_locust.html       # Rapport de performance Locust
-├── GUDLFT_Documentation_Fonctionnalites_Bugs.pdf
-│                             # Documentation fonctionnelle et technique
 ├── requirements.txt          # Dépendances Python
 ├── static/
 │   └── css/
