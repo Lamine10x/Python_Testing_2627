@@ -2,7 +2,7 @@ import html
 
 
 def test_reservation_superieure_a_12_places_refusee(client):
-    """Verifie qu'un club ne peut pas reserver plus de 12 places en une seule fois."""
+    """Vérifie le blocage à plus de 12 places en une seule fois."""
     from server import clubs, competitions
 
     club = [c for c in clubs if c['name'] == 'Simply Lift'][0]
@@ -28,7 +28,7 @@ def test_reservation_superieure_a_12_places_refusee(client):
 
 
 def test_reservation_cumulee_superieure_a_12_places_refusee(client):
-    """Verifie qu'un club ne peut pas depasser 12 places en cumulant plusieurs reservations."""
+    """Vérifie le blocage lors du cumul de réservations dépassant 12 places."""
     from server import clubs, competitions
 
     club = [c for c in clubs if c['name'] == 'Simply Lift'][0]
@@ -61,7 +61,7 @@ def test_reservation_cumulee_superieure_a_12_places_refusee(client):
 
 
 def test_surreservation_places_competition_refusee(client):
-    """Verifie qu'un club ne peut pas reserver plus de places que le stock restant."""
+    """Vérifie le blocage si places demandées > stock restant."""
     from server import clubs, competitions
 
     club = [c for c in clubs if c['name'] == 'Simply Lift'][0]

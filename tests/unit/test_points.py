@@ -2,7 +2,7 @@ import html
 
 
 def test_deduction_points_apres_reservation(client):
-    """Verifie que les points du club et les places sont bien deduits apres une reservation."""
+    """Vérifie la déduction des points et des places après réservation."""
     from server import clubs, competitions
 
     club = [c for c in clubs if c['name'] == 'Simply Lift'][0]
@@ -20,12 +20,14 @@ def test_deduction_points_apres_reservation(client):
 
     assert response.status_code == 200
     assert int(club['points']) == points_initiaux - places_a_reserver
-    assert int(competition['numberOfPlaces']) == places_initiales - places_a_reserver
+    assert int(competition['numberOfPlaces']) == (
+        places_initiales - places_a_reserver
+    )
     assert b"Great-booking complete!" in response.data
 
 
 def test_reservation_points_insuffisants(client):
-    """Verifie qu'un club ne peut pas reserver plus de places qu'il n'a de points."""
+    """Vérifie le blocage si places demandées > solde de points."""
     from server import clubs, competitions
 
     club = [c for c in clubs if c['name'] == 'Iron Temple'][0]
