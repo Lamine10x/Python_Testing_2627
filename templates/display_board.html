@@ -55,6 +55,92 @@
 
     .board-public-tag svg { width: 12px; height: 12px; stroke-width: 2; }
 
+    .board-meta {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .board-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .competition-filter {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .competition-filter label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .competition-filter select {
+      min-width: 280px;
+      padding: 9px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.88rem;
+      outline: none;
+      cursor: pointer;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .competition-filter select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15,23,42,0.08);
+    }
+
+    .board-reset {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      border-bottom: 1px dotted var(--border-dark);
+    }
+
+    .board-reset:hover { color: var(--text); }
+
+    .board-empty {
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    .board-empty strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+    }
+
+    .num-col { text-align: right; }
+
+    .secondary-col {
+      text-align: right;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-variant-numeric: tabular-nums;
+    }
+
     /* TABLE */
     .board-section {
       padding: 28px 0 64px;
@@ -164,8 +250,23 @@
       <div class="container">
         <div class="board-header-inner">
           <div>
-            <p class="board-eyebrow">Classement officiel</p>
-            <h1 class="board-title">Points des clubs</h1>
+            <p class="board-eyebrow">
+              {% if selected_competition %}Classement par compétition{% else %}Classement officiel{% endif %}
+            </p>
+            <h1 class="board-title">
+              {% if selected_competition %}{{ selected_competition['name'] }}{% else %}Points des clubs{% endif %}
+            </h1>
+            {% if selected_competition %}
+            <div class="board-meta">
+              <span>{{ selected_competition['date'] }}</span>
+              <span>{{ selected_competition['numberOfPlaces'] }} places restantes</span>
+              {% if selected_competition.get('registration_open', True) %}
+              <span class="badge badge-success">Inscriptions ouvertes</span>
+              {% else %}
+              <span class="badge badge-danger">Inscriptions fermées</span>
+              {% endif %}
+            </div>
+            {% endif %}
           </div>
           <span class="board-public-tag">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
@@ -177,6 +278,69 @@
 
     <div class="board-section">
       <div class="container">
+        <div class="board-toolbar">
+          <form class="competition-filter" method="get" action="{{ url_for('displayBoard') }}">
+            <label for="competition-select">Classement</label>
+            <select id="competition-select" name="competition" onchange="this.form.submit()">
+              <option value="">Classement général — points des clubs</option>
+              {% for comp in competitions %}
+              <option value="{{ comp['name'] }}" {% if selected_competition and selected_competition['name'] == comp['name'] %}selected{% endif %}>
+                {{ comp['name'] }} — {{ comp['date'][:10] }}
+              </option>
+              {% endfor %}
+            </select>
+            <noscript><button type="submit" class="btn btn-secondary btn-sm">Afficher</button></noscript>
+          </form>
+          {% if selected_competition %}
+          <a href="{{ url_for('displayBoard') }}" class="board-reset">Voir le classement général</a>
+          {% endif %}
+        </div>
+
+        {% if selected_competition %}
+        {% if competition_ranking %}
+        <div class="table-container">
+          <table id="competition-table">
+            <thead>
+              <tr>
+                <th>Rang</th>
+                <th>Club</th>
+                <th class="num-col">Places réservées</th>
+                <th>Points du club</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for club in competition_ranking %}
+              <tr>
+                <td class="rank-col">
+                  {% if loop.index == 1 %}
+                  <span class="rank-medal medal-1">1</span>
+                  {% elif loop.index == 2 %}
+                  <span class="rank-medal medal-2">2</span>
+                  {% elif loop.index == 3 %}
+                  <span class="rank-medal medal-3">3</span>
+                  {% else %}
+                  {{ loop.index }}
+                  {% endif %}
+                </td>
+                <td class="name-col">{{ club['name'] }}</td>
+                <td class="pts-col {% if loop.index <= 3 %}top{% else %}rest{% endif %}">
+                  {{ club['booked_places'] }}
+                </td>
+                <td class="secondary-col">{{ club['points'] }} pts</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="table-container">
+          <div class="board-empty">
+            <strong>Aucune place réservée</strong>
+            Aucune réservation n'a encore été enregistrée pour cette compétition.
+          </div>
+        </div>
+        {% endif %}
+        {% else %}
         <div class="table-container">
           <table id="clubs-table">
             <thead>
@@ -209,6 +373,7 @@
             </tbody>
           </table>
         </div>
+        {% endif %}
       </div>
     </div>
   </div>
