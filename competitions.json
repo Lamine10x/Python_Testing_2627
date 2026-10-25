@@ -3,17 +3,20 @@
         {
             "name": "Spring Festival",
             "date": "2020-03-27 10:00:00",
-            "numberOfPlaces": 25
+            "numberOfPlaces": 25,
+            "registration_open": true
         },
         {
             "name": "Fall Classic",
             "date": "2020-10-22 13:30:00",
-            "numberOfPlaces": 13
+            "numberOfPlaces": 13,
+            "registration_open": true
         },
         {
             "name": "Future Open",
             "date": "2099-06-15 10:00:00",
-            "numberOfPlaces": 25
+            "numberOfPlaces": 25,
+            "registration_open": true
         }
     ]
 }

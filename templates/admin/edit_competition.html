@@ -4,6 +4,7 @@
 {% block page_title %}Modifier une compétition{% endblock %}
 
 {% block content %}
+{% set is_open = comp.get('registration_open', True) %}
 <div class="form-card">
   <p class="form-intro">
     Mettez à jour les informations de la compétition « {{ comp['name'] }} ».
@@ -25,6 +26,12 @@
     <div class="input-group">
       <label for="numberOfPlaces">Nombre de places</label>
       <input type="number" id="numberOfPlaces" name="numberOfPlaces" value="{{ comp['numberOfPlaces'] }}" min="0" step="1" required />
+    </div>
+
+    <div class="input-group checkbox-group">
+      <input type="checkbox" id="registration_open" name="registration_open" value="on" {% if is_open %}checked{% endif %} />
+      <label for="registration_open">Inscriptions ouvertes</label>
+      <input type="hidden" name="registration_open" value="off" />
     </div>
 
     <div class="form-actions">

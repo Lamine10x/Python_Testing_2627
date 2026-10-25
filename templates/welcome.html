@@ -240,7 +240,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             Ouvertes à la réservation
           </div>
-          <div class="stat-value">{{ competitions|selectattr('date', 'gt', now)|list|length }}</div>
+          <div class="stat-value">{{ competitions|selectattr('registration_open')|selectattr('date', 'gt', now)|list|length }}</div>
         </div>
       </div>
 
@@ -250,7 +250,8 @@
 
       <div class="comp-list">
         {% for comp in competitions %}
-        <div class="comp-card {% if comp['date'] <= now %}comp-closed{% endif %}">
+        {% set is_open = comp.get('registration_open', True) %}
+        <div class="comp-card {% if comp['date'] <= now or not is_open %}comp-closed{% endif %}">
           <div>
             <div class="comp-name">{{ comp['name'] }}</div>
             <div class="comp-meta">
@@ -265,13 +266,15 @@
             </div>
           </div>
           <div>
-            {% if comp['numberOfPlaces']|int > 0 and comp['date'] > now %}
+            {% if comp['date'] <= now %}
+            <span class="comp-closed-label">Terminée</span>
+            {% elif not is_open %}
+            <span class="badge badge-danger">Inscriptions fermées</span>
+            {% elif comp['numberOfPlaces']|int > 0 %}
             <a href="{{ url_for('book', competition=comp['name'], club=club['name']) }}" class="btn btn-primary">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Réserver
             </a>
-            {% elif comp['date'] <= now %}
-            <span class="comp-closed-label">Terminée</span>
             {% else %}
             <span class="badge badge-danger">Complet</span>
             {% endif %}
