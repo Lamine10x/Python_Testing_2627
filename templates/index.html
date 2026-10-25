@@ -229,14 +229,16 @@
   </style>
 </head>
 <body>
-  <div class="split">
+  <a class="skip-link" href="#login-form">Aller au formulaire de connexion</a>
+
+  <main class="split">
     <div class="panel-left">
-      <div class="grid-layer"></div>
-      <div class="scan-line"></div>
+      <div class="grid-layer" aria-hidden="true"></div>
+      <div class="scan-line" aria-hidden="true"></div>
 
       <div class="left-content">
         <span class="left-eyebrow">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
           Powerlifting Federation
         </span>
 
@@ -251,7 +253,7 @@
         <div class="features">
           <div class="feature-item">
             <div class="feat-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
             <div class="feat-text">
               <strong>Réservation de places</strong>
@@ -260,7 +262,7 @@
           </div>
           <div class="feature-item">
             <div class="feat-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
             </div>
             <div class="feat-text">
               <strong>Suivi des points</strong>
@@ -269,7 +271,7 @@
           </div>
           <div class="feature-item">
             <div class="feat-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3h18v18H3zM3 9h18M9 21V9"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><path d="M3 3h18v18H3zM3 9h18M9 21V9"/></svg>
             </div>
             <div class="feat-text">
               <strong>Tableau public</strong>
@@ -283,13 +285,13 @@
     <div class="panel-right">
       <div class="login-header">
         <a class="login-logo" href="/">GUDLFT</a>
-        <h2 class="login-title">Connexion</h2>
+        <h2 class="login-title" id="login-title">Connexion</h2>
         <p class="login-sub">Entrez l'adresse email de votre secrétaire</p>
       </div>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-      <ul class="flash-list" style="margin-bottom:18px;">
+      <ul class="flash-list" style="margin-bottom:18px;" role="status" aria-live="polite" aria-atomic="true">
         {% for category, message in messages %}
         <li class="flash-{{ category if category in ['success', 'error', 'info'] else 'info' }}">{{ message }}</li>
         {% endfor %}
@@ -297,7 +299,7 @@
       {% endif %}
       {% endwith %}
 
-      <form class="login-form" action="{{ url_for('showSummary') }}" method="post" id="login-form">
+      <form class="login-form" action="{{ url_for('showSummary') }}" method="post" id="login-form" aria-labelledby="login-title">
         <div class="input-group">
           <label for="email">Adresse email</label>
           <input
@@ -310,14 +312,14 @@
           />
         </div>
         <button type="submit" class="btn btn-primary btn-lg btn-block" id="btn-login">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:16px;height:16px;stroke-width:2;"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false" style="width:16px;height:16px;stroke-width:2;"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
           Accéder au portail
         </button>
       </form>
 
       <div class="login-footer">
         <a href="{{ url_for('displayBoard') }}" id="link-board">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
           Voir le tableau des points
         </a>
         <a href="{{ url_for('adminLogin') }}" id="link-admin" class="admin-link">
@@ -325,7 +327,7 @@
         </a>
       </div>
     </div>
-  </div>
+  </main>
 
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script>if(typeof lucide !== 'undefined') lucide.createIcons();</script>

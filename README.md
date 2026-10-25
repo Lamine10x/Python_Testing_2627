@@ -61,14 +61,22 @@ compétitions.
 
 ### Espace club — réservations et points
 
-- Tableau de bord club avec quatre indicateurs : points disponibles,
-  compétitions, inscriptions ouvertes et places réservées.
+- Tableau de bord club avec six indicateurs : points disponibles, places
+  réservées, points consommés, prochaine échéance, inscriptions ouvertes et
+  compétitions totales.
+- Bloc « Prochaines échéances » avec les trois prochaines compétitions, leur
+  date, les places restantes et le nombre de jours restants.
+- Bloc « Places libérées récemment » alimenté par le journal d'audit : le club
+  voit immédiatement les places rendues par les autres clubs, sans attendre la
+  mise à jour du classement.
 - Section « Mes réservations » :
   - compétitions déjà réservées par le club ;
   - nombre de places réservées ;
   - points engagés ;
   - quota restant sur les 12 places autorisées ;
-  - statut de la réservation : confirmée, terminée ou inscriptions fermées.
+  - statut de la réservation : confirmée, terminée ou inscriptions fermées ;
+  - filtres serveur par statut et par compétition, avec réinitialisation ;
+  - barre de progression accessible pour visualiser le quota consommé.
 - Affichage du quota restant et du nombre de places déjà réservées sur
   chaque carte de compétition.
 - Calcul du maximum réservable à partir de trois contraintes :
@@ -85,13 +93,23 @@ compétitions.
 - Redirection Post/Redirect/Get (HTTP 303) après une réservation réussie,
   avec message de confirmation et retour sur la section « Mes réservations ».
 - Historique des points côté club :
-  - affichage des dix derniers mouvements ;
-  - distinction entre réservation et ajustement administrateur ;
+  - affichage de l'historique complet, sans limite aux dix derniers mouvements ;
+  - distinction entre réservation, remboursement et ajustement administrateur ;
   - date, motif, variation et solde après opération ;
   - enregistrement automatique du débit de points lors d'une réservation.
+- Accessibilité renforcée :
+  - lien d'évitement vers le contenu principal ;
+  - navigation et formulaires libellés en ARIA ;
+  - tableaux avec légendes, en-têtes `scope="col"` et barres de progression
+    accessibles ;
+  - messages flash annoncés via `role="status"` et `aria-live` ;
+  - styles de focus visibles au clavier ;
+  - icônes décoratives masquées aux lecteurs d'écran.
 - Messages flash différenciés : succès, erreur et information.
 - Route `GET /dashboard/<club>` utilisée comme cible de la redirection après
-  réservation.
+  réservation et pour appliquer les filtres.
+- Chaque réservation est tracée dans le journal d'audit global `audit.json`.
+
 
 ### Interface d'administration
 
@@ -233,7 +251,7 @@ Le rapport HTML est disponible dans `htmlcov/index.html`.
 ### Résultat actuel
 
 ```text
-108 tests passent
+118 tests passent
 Couverture de server.py : 100 %
 ```
 
@@ -426,6 +444,7 @@ Les deux commandes ne doivent retourner aucune branche.
 ├── clubs.json                # Clubs et points
 ├── competitions.json         # Compétitions et places
 ├── admin.json                # Comptes administrateur
+├── audit.json                # Journal d'audit global
 ├── locustfile.py             # Scénario de test de performance
 ├── generate_flake8_report.py # Générateur du rapport Flake8 HTML
 ├── rapport_flake8.html       # Rapport Flake8 généré

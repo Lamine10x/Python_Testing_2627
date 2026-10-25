@@ -15,6 +15,7 @@ def prevent_disk_writes(monkeypatch):
     """Evite d'ecrire dans les fichiers JSON pendant les tests."""
     monkeypatch.setattr(server, 'saveClubs', lambda: None)
     monkeypatch.setattr(server, 'saveCompetitions', lambda: None)
+    monkeypatch.setattr(server, 'saveAuditLog', lambda: None)
 
 
 @pytest.fixture
@@ -23,5 +24,6 @@ def client():
     # Réinitialisation propre des données avant chaque test
     server.clubs = server.loadClubs()
     server.competitions = server.loadCompetitions()
+    server.audit_entries = []
     with app.test_client() as client:
         yield client

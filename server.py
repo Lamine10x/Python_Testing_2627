@@ -2,11 +2,14 @@ import json
 from datetime import datetime
 from functools import wraps
 from flask import (
-    Flask, render_template, request, redirect, flash, url_for, session
+    Flask, render_template, request, redirect, flash, url_for, session,
+    has_request_context,
 )
 
 
 MAX_PLACES_PER_COMPETITION = 12
+AUDIT_LOG_FILE = 'audit.json'
+MAX_AUDIT_ENTRIES = 500
 
 
 def loadClubs():
@@ -33,6 +36,24 @@ def loadAdmins():
         return json.load(f)
 
 
+def loadAuditLog():
+    try:
+        with open(AUDIT_LOG_FILE, encoding='utf-8-sig') as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        return []
+    if isinstance(data, list):
+        return data
+    return data.get('entries', [])
+
+
+def saveAuditLog():
+    with open(AUDIT_LOG_FILE, 'w', encoding='utf-8') as f:
+        json.dump(
+            {'entries': audit_entries}, f, indent=4, ensure_ascii=False
+        )
+
+
 def saveClubs():
     with open('clubs.json', 'w', encoding='utf-8') as f:
         json.dump({'clubs': clubs}, f, indent=4, ensure_ascii=False)
@@ -43,6 +64,33 @@ def saveCompetitions():
         json.dump(
             {'competitions': competitions}, f, indent=4, ensure_ascii=False
         )
+
+
+def getAuditActor(fallback='Système'):
+    if has_request_context():
+        return (
+            session.get('admin_name')
+            or session.get('club_name')
+            or fallback
+        )
+    return fallback
+
+
+def recordAudit(action, category, target='', details=None, actor=None):
+    """Ajoute une opération au journal d'audit global."""
+    entry = {
+        'id': datetime.now().strftime('%Y%m%d%H%M%S%f'),
+        'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'actor': actor or getAuditActor(),
+        'action': action,
+        'category': category,
+        'target': target,
+        'details': details or {},
+    }
+    audit_entries.insert(0, entry)
+    del audit_entries[MAX_AUDIT_ENTRIES:]
+    saveAuditLog()
+    return entry
 
 
 def recordPointsChange(
@@ -58,7 +106,6 @@ def recordPointsChange(
         'balance': int(club['points']),
         'type': entry_type,
     })
-    del history[50:]
 
 
 app = Flask(__name__)
@@ -66,6 +113,7 @@ app.secret_key = 'something_special'
 
 competitions = loadCompetitions()
 clubs = loadClubs()
+audit_entries = loadAuditLog()
 
 
 def findClub(club_name):
@@ -146,8 +194,55 @@ def getCompetitionState(club, competition, now=None):
     }
 
 
-def buildClubDashboard(club):
+def getDaysUntil(date_value, now=None):
+    now = now or datetime.now()
+    try:
+        target = datetime.strptime(date_value, '%Y-%m-%d %H:%M:%S')
+    except (TypeError, ValueError):
+        return None
+    return max(0, (target.date() - now.date()).days)
+
+
+def buildRecentReleases(exclude_club=None, limit=5):
+    """Construit le flux des places libérées à partir du journal d'audit."""
     now = datetime.now()
+    releases = []
+    for entry in audit_entries:
+        if entry.get('action') != 'cancel_reservation':
+            continue
+        details = entry.get('details') or {}
+        competition = findCompetition(details.get('competition', ''))
+        if not competition:
+            continue
+        try:
+            if datetime.strptime(
+                competition['date'], '%Y-%m-%d %H:%M:%S'
+            ) < now:
+                continue
+            places = int(details.get('places', 0))
+        except (TypeError, ValueError):
+            continue
+        release_club = details.get('club')
+        if exclude_club and release_club == exclude_club:
+            continue
+        if places <= 0:
+            continue
+        releases.append({
+            'competition': competition,
+            'places': places,
+            'club': release_club or '',
+            'date': entry.get('date', ''),
+        })
+        if len(releases) >= limit:
+            break
+    return releases
+
+
+def buildClubDashboard(club, filters=None):
+    now = datetime.now()
+    filters = filters or {}
+    selected_status = filters.get('statut', '').strip()
+    selected_competition = filters.get('competition', '').strip()
     cards = []
     reservations = []
 
@@ -159,12 +254,17 @@ def buildClubDashboard(club):
             continue
 
         if state['is_past']:
-            status, status_class = 'Terminée', 'badge-default'
+            status, status_class, status_key = (
+                'Terminée', 'badge-default', 'terminee'
+            )
         elif not state['is_open']:
-            status = 'Inscriptions fermées'
-            status_class = 'badge-danger'
+            status, status_class, status_key = (
+                'Inscriptions fermées', 'badge-danger', 'fermee'
+            )
         else:
-            status, status_class = 'Confirmée', 'badge-success'
+            status, status_class, status_key = (
+                'Confirmée', 'badge-success', 'confirmee'
+            )
 
         reservations.append({
             'competition': competition,
@@ -175,10 +275,34 @@ def buildClubDashboard(club):
             'can_book': state['can_book'],
             'status': status,
             'status_class': status_class,
+            'status_key': status_key,
         })
 
     cards.sort(key=lambda c: (c['is_past'], c['competition']['date']))
     reservations.sort(key=lambda r: r['competition']['date'])
+
+    upcoming = []
+    for card in [c for c in cards if not c['is_past']][:3]:
+        upcoming.append({
+            'competition': card['competition'],
+            'places_remaining': card['places_remaining'],
+            'days_until': getDaysUntil(card['competition']['date'], now),
+            'status': card['status'],
+            'status_class': card['status_class'],
+        })
+
+    reservation_total = len(reservations)
+    filtered_reservations = [
+        reservation for reservation in reservations
+        if (
+            not selected_status
+            or reservation['status_key'] == selected_status
+        )
+        and (
+            not selected_competition
+            or reservation['competition']['name'] == selected_competition
+        )
+    ]
 
     stats = {
         'points': int(club['points']),
@@ -187,20 +311,29 @@ def buildClubDashboard(club):
             1 for card in cards if card['is_open'] and not card['is_past']
         ),
         'booked_places': sum(card['booked'] for card in cards),
+        'points_spent': sum(card['booked'] for card in cards),
+        'next_deadline': upcoming[0] if upcoming else None,
     }
 
     return {
         'competition_cards': cards,
-        'reservations': reservations,
-        'points_history': club.get('points_history', [])[:10],
+        'reservations': filtered_reservations,
+        'reservation_total': reservation_total,
+        'reservation_filters': {
+            'statut': selected_status,
+            'competition': selected_competition,
+        },
+        'points_history': club.get('points_history', []),
         'stats': stats,
+        'upcoming': upcoming,
+        'recent_releases': buildRecentReleases(exclude_club=club['name']),
         'now': now.strftime('%Y-%m-%d %H:%M:%S'),
     }
 
 
-def renderClubDashboard(club, status=200):
+def renderClubDashboard(club, status=200, filters=None):
     return render_template(
-        'welcome.html', club=club, **buildClubDashboard(club)
+        'welcome.html', club=club, **buildClubDashboard(club, filters)
     ), status
 
 
@@ -268,7 +401,11 @@ def clubDashboard(club_name):
     if not club:
         flash("Club introuvable.", 'error')
         return render_template('index.html'), 404
-    return renderClubDashboard(club)
+    filters = {
+        'statut': request.args.get('statut', '').strip(),
+        'competition': request.args.get('competition', '').strip(),
+    }
+    return renderClubDashboard(club, filters=filters)
 
 
 @app.route('/book/<competition>/<club>')
@@ -399,6 +536,19 @@ def purchasePlaces():
         f"Réservation — {competition['name']}",
         author=club['name'],
         entry_type='reservation',
+    )
+    recordAudit(
+        'book_places',
+        'reservation',
+        target=f"{club['name']} — {competition['name']}",
+        actor=club['name'],
+        details={
+            'club': club['name'],
+            'competition': competition['name'],
+            'places': placesRequired,
+            'points_after': int(club['points']),
+            'places_remaining': int(competition['numberOfPlaces']),
+        },
     )
     saveClubs()
     saveCompetitions()
