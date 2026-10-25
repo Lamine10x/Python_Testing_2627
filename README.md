@@ -214,22 +214,34 @@ Puis ouvrir <http://localhost:8089> et renseigner :
 - 6 utilisateurs ;
 - taux d'apparition : 1 utilisateur/seconde.
 
-Lancer un test sans interface graphique :
+Lancer un test sans interface graphique et générer le rapport HTML :
 
 ```powershell
-locust -f locustfile.py --headless -u 6 -r 1 -t 30s --host http://127.0.0.1:5000
+locust -f locustfile.py --headless -u 6 -r 1 -t 30s `
+  --host http://127.0.0.1:5000 --html=rapport_locust.html
 ```
 
 Le scénario simule la consultation de l'accueil, la connexion d'un club,
 le classement public, le formulaire de réservation et les routes admin.
 
-### Dernier test de fumée
+Le rapport HTML est disponible dans `rapport_locust.html`.
+
+### Dernier test de performance
+
+Test réalisé avec 6 utilisateurs pendant 30 secondes :
 
 ```text
-6 utilisateurs
-24 requêtes
-0 échec
+Requêtes        : 97
+Échecs          : 0
+Temps moyen     : 2 ms
+95e percentile  : 4 ms
+Temps maximum   : 7 ms
 ```
+
+Les seuils du cahier des charges sont respectés :
+
+- liste des compétitions : moins de 5 secondes ;
+- mise à jour des points : moins de 2 secondes.
 
 ## Structure du projet
 
@@ -242,6 +254,7 @@ le classement public, le formulaire de réservation et les routes admin.
 ├── locustfile.py             # Scénario de test de performance
 ├── generate_flake8_report.py # Générateur du rapport Flake8 HTML
 ├── rapport_flake8.html       # Rapport Flake8 généré
+├── rapport_locust.html       # Rapport de performance Locust
 ├── requirements.txt          # Dépendances Python
 ├── static/
 │   └── css/
