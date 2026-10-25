@@ -1,0 +1,46 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Gestion des compétitions | GUDLFT Admin{% endblock %}
+{% block page_title %}Compétitions{% endblock %}
+
+{% block content %}
+<div class="admin-toolbar">
+  <h2 class="admin-section-title">Liste des compétitions ({{ competitions|length }})</h2>
+  <a href="{{ url_for('adminAddCompetition') }}" class="btn btn-primary btn-sm">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Ajouter une compétition
+  </a>
+</div>
+
+<div class="admin-card">
+  {% if competitions %}
+  <table class="admin-table" id="competitions-admin-table">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>Date</th>
+        <th>Places</th>
+        <th style="text-align:right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for comp in competitions %}
+      <tr>
+        <td class="name-col">{{ comp['name'] }}</td>
+        <td>{{ comp['date'] }}</td>
+        <td><span class="badge badge-default">{{ comp['numberOfPlaces'] }} places</span></td>
+        <td class="actions">
+          <a href="{{ url_for('adminEditCompetition', comp_name=comp['name']) }}" class="btn btn-secondary btn-sm">Modifier</a>
+          <form class="inline-form" action="{{ url_for('adminDeleteCompetition', comp_name=comp['name']) }}" method="post" onsubmit="return confirm('Supprimer cette compétition ?');">
+            <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="admin-empty">Aucune compétition enregistrée. Ajoutez votre première compétition.</p>
+  {% endif %}
+</div>
+{% endblock %}

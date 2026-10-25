@@ -27,7 +27,7 @@ def test_booking_template_attributes(client):
 
 
 def test_welcome_template_clean_html(client):
-    """Vérifie l'absence de balise invalide </br> dans welcome.html."""
+    """Vérifie le HTML et le contenu du tableau de bord."""
     response = client.post(
         '/showSummary', data={'email': 'john@simplylift.co'}
     )
@@ -35,4 +35,5 @@ def test_welcome_template_clean_html(client):
     html_content = response.get_data(as_text=True)
 
     assert '</br>' not in html_content
-    assert '<br />' in html_content
+    assert "Simply Lift" in html_content
+    assert "john@simplylift.co" in html_content
