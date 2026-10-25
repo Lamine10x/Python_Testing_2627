@@ -155,28 +155,30 @@
   </style>
 </head>
 <body>
-  <nav>
+  <a class="skip-link" href="#booking-form">Aller au formulaire de réservation</a>
+
+  <nav aria-label="Navigation principale">
     <a class="nav-brand" href="{{ url_for('index') }}">GUDLFT</a>
     <div class="nav-links">
       <span class="badge badge-default">{{ club['name'] }}</span>
       <a href="{{ url_for('logout') }}" class="btn btn-danger btn" id="btn-logout">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         Déconnexion
       </a>
     </div>
   </nav>
 
-  <div class="page-wrapper">
+  <main id="main-content" class="page-wrapper">
     <div class="book-wrapper">
       <div class="book-card">
         <a href="{{ url_for('clubDashboard', club_name=club['name']) }}" class="back-link">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
           Retour au tableau de bord
         </a>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-        <ul class="flash-list" style="margin-bottom:18px;">
+        <ul class="flash-list" style="margin-bottom:18px;" role="status" aria-live="polite" aria-atomic="true">
           {% for category, message in messages %}
           <li class="flash-{{ category if category in ['success', 'error', 'info'] else 'info' }}">{{ message }}</li>
           {% endfor %}
@@ -184,7 +186,7 @@
         {% endif %}
         {% endwith %}
 
-        <h1 class="book-title">{{ competition['name'] }}</h1>
+        <h1 class="book-title" id="booking-title">{{ competition['name'] }}</h1>
         <p class="book-sub">Confirmez votre réservation — {{ competition['date']|datefr }}</p>
 
         <div class="info-grid">
@@ -206,7 +208,7 @@
           </div>
         </div>
 
-        <div class="booking-summary" aria-live="polite">
+        <div class="booking-summary" aria-live="polite" aria-atomic="true" role="status">
           <div class="summary-title">Récapitulatif</div>
           <div class="summary-row">
             <span>Places demandées</span>
@@ -229,7 +231,7 @@
 
         <hr class="book-divider" style="margin-bottom:20px;">
 
-        <form class="book-form" action="{{ url_for('purchasePlaces') }}" method="post" id="booking-form">
+        <form class="book-form" action="{{ url_for('purchasePlaces') }}" method="post" id="booking-form" aria-labelledby="booking-title">
           <input type="hidden" name="club" value="{{ club['name'] }}">
           <input type="hidden" name="competition" value="{{ competition['name'] }}">
 
@@ -252,13 +254,13 @@
           </div>
 
           <button type="submit" class="btn btn-primary btn-lg btn-block" id="btn-confirm">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:16px;height:16px;stroke-width:2;"><path d="M20 6L9 17l-5-5"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false" style="width:16px;height:16px;stroke-width:2;"><path d="M20 6L9 17l-5-5"/></svg>
             Confirmer la réservation
           </button>
         </form>
       </div>
     </div>
-  </div>
+  </main>
 
   <script>
     (function () {
