@@ -11,6 +11,30 @@ MAX_PLACES_PER_COMPETITION = 12
 AUDIT_LOG_FILE = 'audit.json'
 MAX_AUDIT_ENTRIES = 500
 
+AUDIT_ACTION_LABELS = {
+    'admin_login': 'Connexion admin',
+    'admin_logout': 'Déconnexion admin',
+    'add_club': 'Ajout de club',
+    'update_club': 'Modification de club',
+    'delete_club': 'Suppression de club',
+    'credit_points': 'Crédit de points',
+    'debit_points': 'Débit de points',
+    'add_competition': 'Ajout de compétition',
+    'update_competition': 'Modification de compétition',
+    'delete_competition': 'Suppression de compétition',
+    'toggle_registration': 'Changement des inscriptions',
+    'book_places': 'Réservation de places',
+    'cancel_reservation': 'Annulation de réservation',
+}
+
+AUDIT_CATEGORY_LABELS = {
+    'auth': 'Authentification',
+    'club': 'Clubs',
+    'points': 'Points',
+    'competition': 'Compétitions',
+    'reservation': 'Réservations',
+}
+
 
 def loadClubs():
     with open('clubs.json', encoding='utf-8-sig') as c:
@@ -236,6 +260,220 @@ def buildRecentReleases(exclude_club=None, limit=5):
         if len(releases) >= limit:
             break
     return releases
+
+
+def getReservationStatus(competition, now=None):
+    now = now or datetime.now()
+    try:
+        is_past = datetime.strptime(
+            competition['date'], '%Y-%m-%d %H:%M:%S'
+        ) < now
+    except (TypeError, ValueError):
+        is_past = False
+    if is_past:
+        status, status_class, status_key = (
+            'Terminée', 'badge-default', 'terminee'
+        )
+    elif not competition.get('registration_open', True):
+        status, status_class, status_key = (
+            'Inscriptions fermées', 'badge-danger', 'fermee'
+        )
+    else:
+        status, status_class, status_key = (
+            'Confirmée', 'badge-success', 'confirmee'
+        )
+    return {
+        'status': status,
+        'status_class': status_class,
+        'status_key': status_key,
+        'is_past': is_past,
+    }
+
+
+def buildAdminReservations(filters=None):
+    """Agrège les réservations club/compétition pour l'administration."""
+    now = datetime.now()
+    filters = filters or {}
+    selected_club = filters.get('club', '').strip()
+    selected_competition = filters.get('competition', '').strip()
+    selected_status = filters.get('statut', '').strip()
+    reservations = []
+
+    for club in clubs:
+        for comp_name, places in (club.get('booked') or {}).items():
+            try:
+                booked = int(places)
+            except (TypeError, ValueError):
+                continue
+            if booked <= 0:
+                continue
+            competition = findCompetition(comp_name)
+            if not competition:
+                continue
+            status_info = getReservationStatus(competition, now)
+            if selected_club and club['name'] != selected_club:
+                continue
+            if (
+                selected_competition
+                and competition['name'] != selected_competition
+            ):
+                continue
+            if (
+                selected_status
+                and status_info['status_key'] != selected_status
+            ):
+                continue
+            reservations.append({
+                'club': club,
+                'competition': competition,
+                'booked': booked,
+                'points_refundable': booked,
+                **status_info,
+            })
+
+    reservations.sort(
+        key=lambda item: (item['competition']['date'], item['club']['name'])
+    )
+    stats = {
+        'reservations': len(reservations),
+        'places': sum(item['booked'] for item in reservations),
+        'points': sum(item['points_refundable'] for item in reservations),
+        'clubs': len({item['club']['name'] for item in reservations}),
+        'competitions': len({
+            item['competition']['name'] for item in reservations
+        }),
+    }
+
+    return {
+        'reservations': reservations,
+        'reservation_stats': stats,
+        'reservation_filters': {
+            'club': selected_club,
+            'competition': selected_competition,
+            'statut': selected_status,
+        },
+        'club_options': sorted(club['name'] for club in clubs),
+        'competition_options': sorted(
+            competition['name'] for competition in competitions
+        ),
+        'status_options': [
+            ('confirmee', 'Confirmée'),
+            ('fermee', 'Inscriptions fermées'),
+            ('terminee', 'Terminée'),
+        ],
+    }
+
+
+def formatAuditDetails(entry):
+    """Produit un résumé lisible des détails d'une entrée d'audit."""
+    details = entry.get('details') or {}
+    action = entry.get('action')
+    if action == 'cancel_reservation':
+        reason = details.get('reason') or 'Sans motif'
+        return (
+            f"{details.get('places', 0)} place(s) remboursée(s) · {reason}"
+        )
+    if action == 'book_places':
+        return f"{details.get('places', 0)} place(s) réservée(s)"
+    if action in ('credit_points', 'debit_points'):
+        reason = details.get('reason') or 'Sans motif'
+        return f"{details.get('amount', 0)} point(s) · {reason}"
+    if action == 'update_club':
+        return (
+            f"Points {details.get('points_before', '?')} → "
+            f"{details.get('points_after', '?')}"
+        )
+    if action == 'update_competition':
+        return (
+            f"Places {details.get('places_before', '?')} → "
+            f"{details.get('places_after', '?')}"
+        )
+    if action == 'toggle_registration':
+        return (
+            'Inscriptions ouvertes'
+            if details.get('registration_open')
+            else 'Inscriptions fermées'
+        )
+    if action == 'add_club':
+        return details.get('email', '')
+    if action == 'add_competition':
+        return details.get('date', '')
+    if action in ('admin_login', 'admin_logout'):
+        return 'Session administrateur'
+    return ''
+
+
+def buildAuditEntries(filters=None):
+    """Filtre et enrichit les entrées du journal d'audit global."""
+    filters = filters or {}
+    selected_category = filters.get('categorie', '').strip()
+    selected_action = filters.get('action', '').strip()
+    selected_actor = filters.get('acteur', '').strip().lower()
+    entries = []
+
+    for entry in audit_entries:
+        if (
+            selected_category
+            and entry.get('category') != selected_category
+        ):
+            continue
+        if selected_action and entry.get('action') != selected_action:
+            continue
+        actor = entry.get('actor', '')
+        if selected_actor and selected_actor not in actor.lower():
+            continue
+        entries.append({
+            **entry,
+            'action_label': AUDIT_ACTION_LABELS.get(
+                entry.get('action'), entry.get('action', '')
+            ),
+            'category_label': AUDIT_CATEGORY_LABELS.get(
+                entry.get('category'), entry.get('category', '')
+            ),
+            'details_text': formatAuditDetails(entry),
+        })
+
+    return {
+        'audit_entries': entries,
+        'audit_total': len(audit_entries),
+        'audit_filtered_count': len(entries),
+        'audit_filters': {
+            'categorie': selected_category,
+            'action': selected_action,
+            'acteur': filters.get('acteur', '').strip(),
+        },
+        'audit_action_options': [
+            {'value': key, 'label': label}
+            for key, label in sorted(
+                AUDIT_ACTION_LABELS.items(), key=lambda item: item[1]
+            )
+        ],
+        'audit_category_options': [
+            {'value': key, 'label': label}
+            for key, label in sorted(
+                AUDIT_CATEGORY_LABELS.items(), key=lambda item: item[1]
+            )
+        ],
+        'audit_actors': sorted({
+            entry.get('actor', '') for entry in audit_entries
+            if entry.get('actor')
+        }),
+    }
+
+
+def renderAdminCancellation(
+    club, competition, status=200, form_places='', form_reason=''
+):
+    return render_template(
+        'admin/cancel_reservation.html',
+        club=club,
+        competition=competition,
+        booked=getBookedPlaces(club, competition),
+        status_info=getReservationStatus(competition),
+        form_places=form_places,
+        form_reason=form_reason,
+        admin_name=session.get('admin_name'),
+    ), status
 
 
 def buildClubDashboard(club, filters=None):
@@ -638,6 +876,12 @@ def adminLogin():
         if match:
             session['admin_logged_in'] = True
             session['admin_name'] = match['name']
+            recordAudit(
+                'admin_login',
+                'auth',
+                target='Administration',
+                actor=match['name'],
+            )
             return redirect(url_for('adminDashboard'))
         flash("Identifiants incorrects.")
     return render_template('admin/login.html')
@@ -645,6 +889,13 @@ def adminLogin():
 
 @app.route('/admin/logout')
 def adminLogout():
+    if session.get('admin_logged_in'):
+        recordAudit(
+            'admin_logout',
+            'auth',
+            target='Administration',
+            actor=session.get('admin_name'),
+        )
     session.pop('admin_logged_in', None)
     session.pop('admin_name', None)
     flash("Session admin terminée.")
@@ -654,11 +905,133 @@ def adminLogout():
 @app.route('/admin')
 @admin_required
 def adminDashboard():
+    reservation_data = buildAdminReservations()
     return render_template(
         'admin/dashboard.html',
         clubs=clubs,
         competitions=competitions,
+        reservation_stats=reservation_data['reservation_stats'],
+        audit_count=len(audit_entries),
         admin_name=session.get('admin_name')
+    )
+
+
+@app.route('/admin/reservations')
+@admin_required
+def adminReservations():
+    filters = {
+        'club': request.args.get('club', '').strip(),
+        'competition': request.args.get('competition', '').strip(),
+        'statut': request.args.get('statut', '').strip(),
+    }
+    return render_template(
+        'admin/reservations.html',
+        admin_name=session.get('admin_name'),
+        **buildAdminReservations(filters),
+    )
+
+
+@app.route(
+    '/admin/reservations/<club_name>/<comp_name>/cancel',
+    methods=['GET', 'POST'],
+)
+@admin_required
+def adminCancelReservation(club_name, comp_name):
+    club = findClub(club_name)
+    if not club:
+        flash("Club introuvable.", 'error')
+        return redirect(url_for('adminReservations'))
+    competition = findCompetition(comp_name)
+    if not competition:
+        flash("Compétition introuvable.", 'error')
+        return redirect(url_for('adminReservations'))
+    booked = getBookedPlaces(club, competition)
+    if booked <= 0:
+        flash("Aucune réservation à annuler pour ce club.", 'error')
+        return redirect(url_for('adminReservations'))
+
+    form_places = request.form.get('places', '')
+    form_reason = request.form.get('reason', '')
+    if request.method == 'POST':
+        try:
+            places = int(form_places)
+        except (TypeError, ValueError):
+            flash("Veuillez saisir un nombre valide de places.", 'error')
+            return renderAdminCancellation(
+                club, competition, 400, form_places, form_reason
+            )
+        if places <= 0:
+            flash("Le nombre de places doit être supérieur à 0.", 'error')
+            return renderAdminCancellation(
+                club, competition, 400, form_places, form_reason
+            )
+        if places > booked:
+            flash(
+                f"Impossible d'annuler {places} place(s) : le club n'en a "
+                f"réservé que {booked}.",
+                'error',
+            )
+            return renderAdminCancellation(
+                club, competition, 400, form_places, form_reason
+            )
+
+        reason = form_reason.strip() or 'Annulation administrateur'
+        remaining = booked - places
+        club['points'] = int(club['points']) + places
+        competition['numberOfPlaces'] = (
+            int(competition['numberOfPlaces']) + places
+        )
+        booked_map = club.setdefault('booked', {})
+        if remaining > 0:
+            booked_map[competition['name']] = remaining
+        else:
+            booked_map.pop(competition['name'], None)
+
+        recordPointsChange(
+            club,
+            places,
+            f"Remboursement — {competition['name']} ({reason})",
+            entry_type='refund',
+        )
+        recordAudit(
+            'cancel_reservation',
+            'reservation',
+            target=f"{club['name']} — {competition['name']}",
+            details={
+                'club': club['name'],
+                'competition': competition['name'],
+                'places': places,
+                'reason': reason,
+                'booked_before': booked,
+                'booked_after': remaining,
+                'points_after': int(club['points']),
+            },
+        )
+        saveClubs()
+        saveCompetitions()
+        flash(
+            f"{places} place(s) annulée(s) et remboursée(s) au club "
+            f"'{club['name']}' pour « {competition['name']} ». "
+            f"Nouveau solde : {club['points']} point(s).",
+            'success',
+        )
+        return redirect(url_for('adminReservations'))
+
+    return renderAdminCancellation(club, competition)
+
+
+@app.route('/admin/audit')
+@admin_required
+def adminAudit():
+    filters = {
+        'categorie': request.args.get('categorie', '').strip(),
+        'action': request.args.get('action', '').strip(),
+        'acteur': request.args.get('acteur', '').strip(),
+    }
+    return render_template(
+        'admin/audit.html',
+        admin_name=session.get('admin_name'),
+        **buildAuditEntries(filters),
     )
 
 
@@ -686,6 +1059,7 @@ def adminEditClub(club_name):
             flash("Valeur de points invalide.")
             return redirect(url_for('adminEditClub', club_name=club_name))
         old_points = int(club['points'])
+        old_name = club['name']
         club['name'] = request.form.get('name', club['name']).strip()
         club['email'] = request.form.get('email', club['email']).strip()
         club['points'] = new_points
@@ -693,6 +1067,17 @@ def adminEditClub(club_name):
             recordPointsChange(
                 club, new_points - old_points, 'Modification via la fiche club'
             )
+        recordAudit(
+            'update_club',
+            'club',
+            target=old_name,
+            details={
+                'new_name': club['name'],
+                'email': club['email'],
+                'points_before': old_points,
+                'points_after': new_points,
+            },
+        )
         saveClubs()
         flash(f"Club '{club['name']}' mis à jour.")
         return redirect(url_for('adminClubs'))
@@ -750,6 +1135,16 @@ def adminClubPoints(club_name):
 
         club['points'] = new_points
         recordPointsChange(club, delta, reason)
+        recordAudit(
+            'credit_points' if delta > 0 else 'debit_points',
+            'points',
+            target=club['name'],
+            details={
+                'amount': amount,
+                'reason': reason,
+                'balance': new_points,
+            },
+        )
         saveClubs()
 
         action = 'crédité(s)' if delta > 0 else 'débité(s)'
@@ -759,7 +1154,7 @@ def adminClubPoints(club_name):
         )
         return redirect(url_for('adminClubPoints', club_name=club_name))
 
-    history = club.get('points_history', [])[:20]
+    history = club.get('points_history', [])
     return render_template(
         'admin/club_points.html',
         club=club,
@@ -789,6 +1184,12 @@ def adminAddClub():
             'points_history': [],
             'booked': {},
         })
+        recordAudit(
+            'add_club',
+            'club',
+            target=name,
+            details={'email': email, 'points': points},
+        )
         saveClubs()
         flash(f"Club '{name}' ajouté.")
         return redirect(url_for('adminClubs'))
@@ -803,6 +1204,7 @@ def adminAddClub():
 def adminDeleteClub(club_name):
     global clubs
     clubs = [c for c in clubs if c['name'] != club_name]
+    recordAudit('delete_club', 'club', target=club_name)
     saveClubs()
     flash(f"Club '{club_name}' supprimé.")
     return redirect(url_for('adminClubs'))
@@ -833,11 +1235,27 @@ def adminEditCompetition(comp_name):
             return redirect(
                 url_for('adminEditCompetition', comp_name=comp_name)
             )
+        old_name = comp['name']
+        old_places = int(comp['numberOfPlaces'])
+        old_registration_open = comp.get('registration_open', True)
         comp['name'] = request.form.get('name', comp['name']).strip()
         comp['date'] = request.form.get('date', comp['date']).strip()
         comp['numberOfPlaces'] = places
         comp['registration_open'] = (
             request.form.get('registration_open') != 'off'
+        )
+        recordAudit(
+            'update_competition',
+            'competition',
+            target=old_name,
+            details={
+                'new_name': comp['name'],
+                'date': comp['date'],
+                'places_before': old_places,
+                'places_after': places,
+                'registration_before': old_registration_open,
+                'registration_after': comp['registration_open'],
+            },
         )
         saveCompetitions()
         flash(f"Compétition '{comp['name']}' mise à jour.")
@@ -861,6 +1279,12 @@ def adminToggleCompetitionRegistration(comp_name):
         return redirect(url_for('adminCompetitions'))
 
     comp['registration_open'] = not comp.get('registration_open', True)
+    recordAudit(
+        'toggle_registration',
+        'competition',
+        target=comp['name'],
+        details={'registration_open': comp['registration_open']},
+    )
     saveCompetitions()
     state = 'ouvertes' if comp['registration_open'] else 'fermées'
     flash(f"Inscriptions {state} pour la compétition '{comp_name}'.")
@@ -891,6 +1315,12 @@ def adminAddCompetition():
                 ),
             }
         )
+        recordAudit(
+            'add_competition',
+            'competition',
+            target=name,
+            details={'date': date, 'places': places},
+        )
         saveCompetitions()
         flash(f"Compétition '{name}' ajoutée.")
         return redirect(url_for('adminCompetitions'))
@@ -905,6 +1335,7 @@ def adminAddCompetition():
 def adminDeleteCompetition(comp_name):
     global competitions
     competitions = [c for c in competitions if c['name'] != comp_name]
+    recordAudit('delete_competition', 'competition', target=comp_name)
     saveCompetitions()
     flash(f"Compétition '{comp_name}' supprimée.")
     return redirect(url_for('adminCompetitions'))

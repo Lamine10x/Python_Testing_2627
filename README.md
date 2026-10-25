@@ -4,10 +4,11 @@ Application Flask de démonstration pour la gestion des réservations de places
 de compétitions par les clubs de powerlifting.
 
 Le projet couvre les correctifs de la Phase 1, le tableau public des points
-(Phase 2), un espace club enrichi (réservations, quota et historique des
-points) et une interface d'administration complète, y compris la gestion
-des points des clubs et l'ouverture ou la fermeture des inscriptions aux
-compétitions.
+(Phase 2), un espace club enrichi (réservations, quota, historique complet,
+filtres et accessibilité) et une interface d'administration complète, y
+compris la gestion des réservations, l'annulation avec remboursement, la
+gestion des points, l'ouverture ou la fermeture des inscriptions et le
+journal d'audit global.
 
 ## Sommaire
 
@@ -114,10 +115,32 @@ compétitions.
 ### Interface d'administration
 
 - Connexion et déconnexion administrateur protégées par session.
-- Tableau de bord avec statistiques :
+- Tableau de bord avec six indicateurs :
   - nombre de clubs ;
   - nombre de compétitions ;
-  - total des points.
+  - total des points ;
+  - réservations actives ;
+  - places réservées ;
+  - nombre d'entrées d'audit.
+- Gestion des réservations :
+  - vue consolidée par club et compétition ;
+  - filtres par club, compétition et statut ;
+  - indicateurs des places réservées et des points remboursables ;
+  - formulaire d'annulation partielle ou totale ;
+  - remboursement automatique de 1 point par place annulée ;
+  - remise immédiate des places dans la compétition ;
+  - mise à jour de la réservation du club et de son historique de points ;
+  - message de confirmation avec le nouveau solde.
+- Journal d'audit global :
+  - conservation des 500 dernières opérations dans `audit.json` ;
+  - traçabilité des connexions et déconnexions administrateur ;
+  - traçabilité des ajouts, modifications et suppressions de clubs ;
+  - traçabilité des crédits et débits de points ;
+  - traçabilité des ajouts, modifications et suppressions de compétitions ;
+  - traçabilité de l'ouverture et de la fermeture des inscriptions ;
+  - traçabilité des réservations et des annulations/remboursements ;
+  - filtres par catégorie, action et acteur ;
+  - affichage de l'acteur, de la cible, de la date et d'un résumé lisible.
 - Gestion complète des clubs :
   - liste ;
   - ajout ;
@@ -132,14 +155,16 @@ compétitions.
   - crédit ou débit d'un montant entier positif ;
   - motif facultatif ;
   - contrôle du solde pour interdire un solde négatif ;
-  - historique horodaté des ajustements avec l'administrateur, le motif et
-    le solde après opération.
+  - historique complet et horodaté des mouvements avec l'administrateur, le
+    type, le motif et le solde après opération.
 - Ouverture et fermeture des inscriptions par compétition :
   - bouton d'action direct depuis la liste des compétitions ;
   - case à cocher dans les formulaires d'ajout et de modification ;
   - blocage des réservations lorsque les inscriptions sont fermées ;
   - affichage de l'état sur le tableau de bord club.
 - Templates dédiés dans `templates/admin/`.
+- Routes principales : `/admin/reservations`, `/admin/audit` et
+  `/admin/reservations/<club>/<competition>/cancel`.
 - Identifiants stockés dans `admin.json`.
 - Les ajustements de points sont conservés dans le champ `points_history`
   de chaque club ; l'état des inscriptions est stocké dans le champ
@@ -251,7 +276,7 @@ Le rapport HTML est disponible dans `htmlcov/index.html`.
 ### Résultat actuel
 
 ```text
-118 tests passent
+135 tests passent
 Couverture de server.py : 100 %
 ```
 

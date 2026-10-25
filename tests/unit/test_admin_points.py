@@ -11,6 +11,7 @@ ADMIN_PASSWORD = 'admin1234'
 def prevent_disk_writes(monkeypatch):
     """Evite d'ecrire dans clubs.json pendant les tests."""
     monkeypatch.setattr(server, 'saveClubs', lambda: None)
+    monkeypatch.setattr(server, 'saveAuditLog', lambda: None)
 
 
 def login_admin(client):
@@ -34,8 +35,8 @@ def test_admin_points_page_displays_club_and_history(client):
     assert 'Ajuster les points' in content
     assert 'Simply Lift' in content
     assert 'Solde actuel' in content
-    assert 'Historique des ajustements' in content
-    assert 'Aucun ajustement enregistré pour ce club.' in content
+    assert 'Historique complet des points' in content
+    assert 'Aucun mouvement de points enregistré pour ce club.' in content
 
 
 def test_admin_credit_points(client):

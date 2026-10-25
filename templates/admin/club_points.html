@@ -99,26 +99,38 @@
 
   <div class="admin-card">
     <div class="admin-toolbar" style="margin-bottom: 14px;">
-      <h2 class="admin-section-title" style="margin: 0;">Historique des ajustements</h2>
+      <h2 class="admin-section-title" style="margin: 0;">Historique complet des points</h2>
       <span class="badge badge-default">{{ history|length }} opération(s)</span>
     </div>
 
     {% if history %}
     <table class="admin-table" id="points-history-table">
+      <caption class="sr-only">Historique complet des mouvements de points du club</caption>
       <thead>
         <tr>
-          <th>Date</th>
-          <th>Admin</th>
-          <th>Mouvement</th>
-          <th>Motif</th>
-          <th>Solde</th>
+          <th scope="col">Date</th>
+          <th scope="col">Admin</th>
+          <th scope="col">Type</th>
+          <th scope="col">Mouvement</th>
+          <th scope="col">Motif</th>
+          <th scope="col">Solde</th>
         </tr>
       </thead>
       <tbody>
         {% for item in history %}
+        {% set entry_type = item.get('type', 'admin') %}
         <tr>
           <td class="name-col">{{ item['date'] }}</td>
           <td>{{ item['admin'] }}</td>
+          <td>
+            {% if entry_type == 'reservation' %}
+            <span class="badge badge-default">Réservation</span>
+            {% elif entry_type == 'refund' %}
+            <span class="badge badge-success">Remboursement</span>
+            {% else %}
+            <span class="badge badge-success">Ajustement</span>
+            {% endif %}
+          </td>
           <td>
             <span class="history-amount {% if item['amount'] > 0 %}credit{% else %}debit{% endif %}">
               {% if item['amount'] > 0 %}+{% endif %}{{ item['amount'] }} pts
@@ -131,7 +143,7 @@
       </tbody>
     </table>
     {% else %}
-    <p class="admin-empty">Aucun ajustement enregistré pour ce club.</p>
+    <p class="admin-empty">Aucun mouvement de points enregistré pour ce club.</p>
     {% endif %}
   </div>
 </div>

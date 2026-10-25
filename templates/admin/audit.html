@@ -1,0 +1,153 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Journal d'audit | GUDLFT Admin{% endblock %}
+{% block page_title %}Journal d'audit global{% endblock %}
+
+{% block content %}
+<style>
+  .audit-filter-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+
+  .audit-filter-row {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .audit-filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 180px;
+  }
+
+  .audit-filter-field label {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
+  }
+
+  .audit-filter-field select,
+  .audit-filter-field input {
+    background: var(--surface);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    color: var(--text);
+    font-size: 0.85rem;
+    font-family: inherit;
+  }
+
+  .audit-filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 1px;
+  }
+
+  .audit-details {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+
+  .audit-target {
+    font-weight: 500;
+  }
+
+  @media (max-width: 640px) {
+    .audit-filter-field { width: 100%; }
+    .audit-filter-actions { width: 100%; }
+  }
+</style>
+
+<div class="admin-stats">
+  <div class="admin-stat">
+    <div class="admin-stat-label">Entrées totales</div>
+    <div class="admin-stat-value">{{ audit_total }}</div>
+  </div>
+  <div class="admin-stat">
+    <div class="admin-stat-label">Entrées affichées</div>
+    <div class="admin-stat-value">{{ audit_filtered_count }}</div>
+  </div>
+  <div class="admin-stat">
+    <div class="admin-stat-label">Acteurs distincts</div>
+    <div class="admin-stat-value">{{ audit_actors|length }}</div>
+  </div>
+</div>
+
+<div class="admin-toolbar">
+  <h2 class="admin-section-title">Traçabilité des actions</h2>
+  <a href="{{ url_for('adminReservations') }}" class="btn btn-ghost btn-sm">Gérer les réservations</a>
+</div>
+
+<form class="audit-filter-form" method="get" action="{{ url_for('adminAudit') }}" aria-label="Filtrer le journal d'audit">
+  <div class="audit-filter-row">
+    <div class="audit-filter-field">
+      <label for="audit-categorie">Catégorie</label>
+      <select id="audit-categorie" name="categorie">
+        <option value="">Toutes les catégories</option>
+        {% for option in audit_category_options %}
+        <option value="{{ option.value }}" {% if audit_filters.categorie == option.value %}selected{% endif %}>{{ option.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="audit-filter-field">
+      <label for="audit-action">Action</label>
+      <select id="audit-action" name="action">
+        <option value="">Toutes les actions</option>
+        {% for option in audit_action_options %}
+        <option value="{{ option.value }}" {% if audit_filters.action == option.value %}selected{% endif %}>{{ option.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="audit-filter-field">
+      <label for="audit-acteur">Acteur</label>
+      <input type="search" id="audit-acteur" name="acteur" value="{{ audit_filters.acteur }}" placeholder="Nom ou club..." />
+    </div>
+    <div class="audit-filter-actions">
+      <button type="submit" class="btn btn-primary btn-sm">Filtrer</button>
+      <a href="{{ url_for('adminAudit') }}" class="btn btn-ghost btn-sm">Réinitialiser</a>
+    </div>
+  </div>
+</form>
+
+<div class="admin-card">
+  {% if audit_entries %}
+  <table class="admin-table" id="audit-table">
+    <caption class="sr-only">Journal global des actions administratives et des réservations</caption>
+    <thead>
+      <tr>
+        <th scope="col">Date</th>
+        <th scope="col">Acteur</th>
+        <th scope="col">Catégorie</th>
+        <th scope="col">Action</th>
+        <th scope="col">Cible</th>
+        <th scope="col">Détails</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in audit_entries %}
+      <tr>
+        <td class="name-col">{{ entry.date|datefr }}</td>
+        <td>{{ entry.actor }}</td>
+        <td><span class="badge badge-default">{{ entry.category_label }}</span></td>
+        <td>{{ entry.action_label }}</td>
+        <td class="audit-target">{{ entry.target }}</td>
+        <td class="audit-details">{{ entry.details_text }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="admin-empty">Aucune entrée d'audit ne correspond aux filtres sélectionnés.</p>
+  {% endif %}
+</div>
+{% endblock %}

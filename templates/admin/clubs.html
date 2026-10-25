@@ -7,7 +7,7 @@
 <div class="admin-toolbar">
   <h2 class="admin-section-title">Liste des clubs ({{ clubs|length }})</h2>
   <a href="{{ url_for('adminAddClub') }}" class="btn btn-primary btn-sm">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     Ajouter un club
   </a>
 </div>
@@ -15,12 +15,13 @@
 <div class="admin-card">
   {% if clubs %}
   <table class="admin-table" id="clubs-admin-table">
+    <caption class="sr-only">Liste des clubs et de leurs points</caption>
     <thead>
       <tr>
-        <th>Nom</th>
-        <th>Email</th>
-        <th>Points</th>
-        <th style="text-align:right;">Actions</th>
+        <th scope="col">Nom</th>
+        <th scope="col">Email</th>
+        <th scope="col">Points</th>
+        <th scope="col" style="text-align:right;">Actions</th>
       </tr>
     </thead>
     <tbody>
