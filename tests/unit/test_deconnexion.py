@@ -5,11 +5,12 @@ def test_logout_redirection(client):
     """Vérifie que la route /logout redirige vers l'accueil (HTTP 302)."""
     response = client.get('/logout')
     assert response.status_code == 302
-    assert response.headers['Location'] == '/' or response.headers['Location'].endswith('/')
+    loc = response.headers['Location']
+    assert loc == '/' or loc.endswith('/')
 
 
 def test_logout_message_flash(client):
-    """Vérifie qu'un message flash de confirmation s'affiche après déconnexion."""
+    """Vérifie le message flash de confirmation après déconnexion."""
     response = client.get('/logout', follow_redirects=True)
     assert response.status_code == 200
     texte = html.unescape(response.get_data(as_text=True))

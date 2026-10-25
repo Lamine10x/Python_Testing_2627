@@ -2,7 +2,7 @@ import html
 
 
 def test_book_club_inconnu(client):
-    """Vérifie qu'un club inconnu dans l'URL de /book renvoie une erreur 404 propre."""
+    """Vérifie qu'un club inconnu renvoie une erreur 404 propre."""
     response = client.get('/book/Future Open/ClubInexistant')
 
     assert response.status_code == 404
@@ -11,7 +11,7 @@ def test_book_club_inconnu(client):
 
 
 def test_book_competition_inconnue(client):
-    """Vérifie qu'une compétition inconnue dans l'URL de /book renvoie une erreur 404 propre."""
+    """Vérifie qu'une compétition inconnue renvoie une erreur 404 propre."""
     response = client.get('/book/CompetitionInexistante/Simply Lift')
 
     assert response.status_code == 404
@@ -20,7 +20,7 @@ def test_book_competition_inconnue(client):
 
 
 def test_purchase_club_inconnu(client):
-    """Vérifie qu'un club inconnu dans le formulaire de /purchasePlaces renvoie une 404 sans crasher."""
+    """Vérifie qu'un club inconnu dans le formulaire renvoie une 404."""
     response = client.post('/purchasePlaces', data={
         'club': 'ClubInexistant',
         'competition': 'Future Open',
@@ -33,7 +33,7 @@ def test_purchase_club_inconnu(client):
 
 
 def test_purchase_competition_inconnue(client):
-    """Vérifie qu'une compétition inconnue dans le formulaire de /purchasePlaces renvoie une 404 sans crasher."""
+    """Vérifie qu'une compétition inconnue dans le formulaire renvoie 404."""
     response = client.post('/purchasePlaces', data={
         'club': 'Simply Lift',
         'competition': 'CompetitionInexistante',
@@ -46,7 +46,7 @@ def test_purchase_competition_inconnue(client):
 
 
 def test_purchase_champs_manquants(client):
-    """Vérifie qu'une requête sans champs de formulaire renvoie une 404 propre sans erreur 500."""
+    """Vérifie qu'une requête sans champs renvoie une erreur 404 propre."""
     response = client.post('/purchasePlaces', data={})
 
     assert response.status_code == 404

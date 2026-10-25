@@ -1,5 +1,5 @@
 def test_index_template_attributes(client):
-    """Vérifie la conformité et l'accessibilité du formulaire de la page d'accueil."""
+    """Vérifie la conformité du formulaire de la page d'accueil."""
     response = client.get('/')
     assert response.status_code == 200
     html_content = response.get_data(as_text=True)
@@ -12,7 +12,7 @@ def test_index_template_attributes(client):
 
 
 def test_booking_template_attributes(client):
-    """Vérifie la conformité, l'accessibilité et les contraintes HTML5 de booking.html."""
+    """Vérifie l'accessibilité et les contraintes de booking.html."""
     response = client.get('/book/Future Open/Simply Lift')
     assert response.status_code == 200
     html_content = response.get_data(as_text=True)
@@ -28,7 +28,9 @@ def test_booking_template_attributes(client):
 
 def test_welcome_template_clean_html(client):
     """Vérifie l'absence de balise invalide </br> dans welcome.html."""
-    response = client.post('/showSummary', data={'email': 'john@simplylift.co'})
+    response = client.post(
+        '/showSummary', data={'email': 'john@simplylift.co'}
+    )
     assert response.status_code == 200
     html_content = response.get_data(as_text=True)
 
