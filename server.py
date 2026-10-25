@@ -6,6 +6,9 @@ from flask import (
 )
 
 
+MAX_PLACES_PER_COMPETITION = 12
+
+
 def loadClubs():
     with open('clubs.json', encoding='utf-8-sig') as c:
         listOfClubs = json.load(c)['clubs']
@@ -42,15 +45,18 @@ def saveCompetitions():
         )
 
 
-def recordPointsChange(club, amount, reason):
+def recordPointsChange(
+    club, amount, reason, author=None, entry_type='admin'
+):
     """Ajoute une operation a l'historique des points d'un club."""
     history = club.setdefault('points_history', [])
     history.insert(0, {
         'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'admin': session.get('admin_name', 'Administrateur'),
+        'admin': author or session.get('admin_name', 'Administrateur'),
         'amount': amount,
         'reason': reason,
         'balance': int(club['points']),
+        'type': entry_type,
     })
     del history[50:]
 
@@ -60,6 +66,173 @@ app.secret_key = 'something_special'
 
 competitions = loadCompetitions()
 clubs = loadClubs()
+
+
+def findClub(club_name):
+    return next((c for c in clubs if c['name'] == club_name), None)
+
+
+def findCompetition(competition_name):
+    return next(
+        (c for c in competitions if c['name'] == competition_name), None
+    )
+
+
+def getBookedPlaces(club, competition):
+    return int(club.get('booked', {}).get(competition['name'], 0))
+
+
+def getQuotaRemaining(club, competition):
+    return max(
+        0, MAX_PLACES_PER_COMPETITION - getBookedPlaces(club, competition)
+    )
+
+
+def getMaxBookable(club, competition):
+    return min(
+        getQuotaRemaining(club, competition),
+        max(0, int(competition['numberOfPlaces'])),
+        max(0, int(club['points'])),
+    )
+
+
+def getCompetitionState(club, competition, now=None):
+    now = now or datetime.now()
+    booked = getBookedPlaces(club, competition)
+    quota = getQuotaRemaining(club, competition)
+    places = max(0, int(competition['numberOfPlaces']))
+    points = max(0, int(club['points']))
+    max_bookable = min(quota, places, points)
+    is_past = datetime.strptime(
+        competition['date'], '%Y-%m-%d %H:%M:%S'
+    ) < now
+    is_open = bool(competition.get('registration_open', True))
+
+    if is_past:
+        status, can_book, status_class = (
+            'Terminée', False, 'badge-default'
+        )
+    elif not is_open:
+        status, can_book, status_class = (
+            'Inscriptions fermées', False, 'badge-danger'
+        )
+    elif places <= 0:
+        status, can_book, status_class = (
+            'Complet', False, 'badge-danger'
+        )
+    elif quota <= 0:
+        status, can_book, status_class = (
+            'Quota atteint', False, 'badge-default'
+        )
+    elif points <= 0:
+        status, can_book, status_class = (
+            'Points insuffisants', False, 'badge-danger'
+        )
+    else:
+        status, can_book, status_class = (
+            'Disponible', True, 'badge-success'
+        )
+
+    return {
+        'booked': booked,
+        'quota_remaining': quota,
+        'max_bookable': max_bookable,
+        'places_remaining': places,
+        'is_past': is_past,
+        'is_open': is_open,
+        'can_book': can_book,
+        'status': status,
+        'status_class': status_class,
+    }
+
+
+def buildClubDashboard(club):
+    now = datetime.now()
+    cards = []
+    reservations = []
+
+    for competition in competitions:
+        state = getCompetitionState(club, competition, now)
+        cards.append({'competition': competition, **state})
+
+        if state['booked'] <= 0:
+            continue
+
+        if state['is_past']:
+            status, status_class = 'Terminée', 'badge-default'
+        elif not state['is_open']:
+            status = 'Inscriptions fermées'
+            status_class = 'badge-danger'
+        else:
+            status, status_class = 'Confirmée', 'badge-success'
+
+        reservations.append({
+            'competition': competition,
+            'booked': state['booked'],
+            'points_spent': state['booked'],
+            'quota_remaining': state['quota_remaining'],
+            'max_bookable': state['max_bookable'],
+            'can_book': state['can_book'],
+            'status': status,
+            'status_class': status_class,
+        })
+
+    cards.sort(key=lambda c: (c['is_past'], c['competition']['date']))
+    reservations.sort(key=lambda r: r['competition']['date'])
+
+    stats = {
+        'points': int(club['points']),
+        'competitions': len(competitions),
+        'open_competitions': sum(
+            1 for card in cards if card['is_open'] and not card['is_past']
+        ),
+        'booked_places': sum(card['booked'] for card in cards),
+    }
+
+    return {
+        'competition_cards': cards,
+        'reservations': reservations,
+        'points_history': club.get('points_history', [])[:10],
+        'stats': stats,
+        'now': now.strftime('%Y-%m-%d %H:%M:%S'),
+    }
+
+
+def renderClubDashboard(club, status=200):
+    return render_template(
+        'welcome.html', club=club, **buildClubDashboard(club)
+    ), status
+
+
+def getBookingContext(club, competition):
+    return {
+        'already_booked': getBookedPlaces(club, competition),
+        'quota_remaining': getQuotaRemaining(club, competition),
+        'max_bookable': getMaxBookable(club, competition),
+    }
+
+
+def renderBooking(club, competition, status=200, form_places=''):
+    return render_template(
+        'booking.html',
+        club=club,
+        competition=competition,
+        form_places=form_places,
+        **getBookingContext(club, competition),
+    ), status
+
+
+@app.template_filter('datefr')
+def formatDateFr(value):
+    if not value:
+        return ''
+    for date_format in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d'):
+        try:
+            parsed = datetime.strptime(value, date_format)
+            return parsed.strftime('%d/%m/%Y %H:%M')
+        except (TypeError, ValueError):
+            continue
+    return value
 
 
 def admin_required(f):
@@ -80,149 +253,170 @@ def index():
 @app.route('/showSummary', methods=['POST'])
 def showSummary():
     email = request.form.get('email', '').strip()
-    matching_clubs = [club for club in clubs if club['email'] == email]
-    if not matching_clubs:
-        flash("Désolé, cette adresse e-mail n'a pas été trouvée.")
+    club = next((c for c in clubs if c['email'] == email), None)
+    if not club:
+        flash(
+            "Désolé, cette adresse e-mail n'a pas été trouvée.", 'error'
+        )
         return render_template('index.html'), 401
-    club = matching_clubs[0]
-    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    return render_template(
-        'welcome.html', club=club, competitions=competitions, now=now
-    )
+    return renderClubDashboard(club)
+
+
+@app.route('/dashboard/<club_name>')
+def clubDashboard(club_name):
+    club = findClub(club_name)
+    if not club:
+        flash("Club introuvable.", 'error')
+        return render_template('index.html'), 404
+    return renderClubDashboard(club)
 
 
 @app.route('/book/<competition>/<club>')
 def book(competition, club):
-    matching_clubs = [c for c in clubs if c['name'] == club]
-    matching_competitions = [
-        c for c in competitions if c['name'] == competition
-    ]
-    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-    if not matching_clubs:
-        flash("Club introuvable.")
+    foundClub = findClub(club)
+    if not foundClub:
+        flash("Club introuvable.", 'error')
         return render_template('index.html'), 404
 
-    foundClub = matching_clubs[0]
-
-    if not matching_competitions:
-        flash("Compétition introuvable.")
-        return render_template(
-            'welcome.html', club=foundClub, competitions=competitions, now=now
-        ), 404
-
-    foundCompetition = matching_competitions[0]
+    foundCompetition = findCompetition(competition)
+    if not foundCompetition:
+        flash("Compétition introuvable.", 'error')
+        return renderClubDashboard(foundClub, 404)
 
     comp_date = datetime.strptime(
         foundCompetition['date'], '%Y-%m-%d %H:%M:%S'
     )
     if comp_date < datetime.now():
-        flash("Vous ne pouvez pas réserver pour une compétition déjà passée.")
-        return render_template(
-            'welcome.html', club=foundClub, competitions=competitions, now=now
-        ), 400
+        flash(
+            "Vous ne pouvez pas réserver pour une compétition déjà passée.",
+            'error',
+        )
+        return renderClubDashboard(foundClub, 400)
 
     if not foundCompetition.get('registration_open', True):
-        flash("Les inscriptions sont fermées pour cette compétition.")
-        return render_template(
-            'welcome.html', club=foundClub, competitions=competitions, now=now
-        ), 403
+        flash(
+            "Les inscriptions sont fermées pour cette compétition.", 'error'
+        )
+        return renderClubDashboard(foundClub, 403)
 
-    return render_template(
-        'booking.html', club=foundClub, competition=foundCompetition
-    )
+    state = getCompetitionState(foundClub, foundCompetition)
+    if state['max_bookable'] <= 0:
+        if state['places_remaining'] <= 0:
+            message = "Cette compétition est complète."
+        elif state['quota_remaining'] <= 0:
+            message = (
+                "Vous avez atteint la limite de "
+                f"{MAX_PLACES_PER_COMPETITION} places pour cette compétition."
+            )
+        else:
+            message = (
+                "Vous n'avez pas assez de points pour réserver une place."
+            )
+        flash(message, 'error')
+        return renderClubDashboard(foundClub, 400)
+
+    return renderBooking(foundClub, foundCompetition)
 
 
 @app.route('/purchasePlaces', methods=['POST'])
 def purchasePlaces():
     comp_name = request.form.get('competition')
     club_name = request.form.get('club')
-    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    form_places = request.form.get('places', '')
 
-    matching_clubs = [c for c in clubs if c['name'] == club_name]
-    if not matching_clubs:
-        flash("Club introuvable.")
+    club = findClub(club_name)
+    if not club:
+        flash("Club introuvable.", 'error')
         return render_template('index.html'), 404
 
-    club = matching_clubs[0]
-
-    matching_competitions = [c for c in competitions if c['name'] == comp_name]
-    if not matching_competitions:
-        flash("Compétition introuvable.")
-        return render_template(
-            'welcome.html', club=club, competitions=competitions, now=now
-        ), 404
-
-    competition = matching_competitions[0]
+    competition = findCompetition(comp_name)
+    if not competition:
+        flash("Compétition introuvable.", 'error')
+        return renderClubDashboard(club, 404)
 
     competition_date = datetime.strptime(
         competition['date'], '%Y-%m-%d %H:%M:%S'
     )
     if competition_date < datetime.now():
-        flash("Vous ne pouvez pas réserver pour une compétition déjà passée.")
-        return render_template(
-            'welcome.html', club=club, competitions=competitions, now=now
-        ), 400
+        flash(
+            "Vous ne pouvez pas réserver pour une compétition déjà passée.",
+            'error',
+        )
+        return renderClubDashboard(club, 400)
 
     if not competition.get('registration_open', True):
-        flash("Les inscriptions sont fermées pour cette compétition.")
-        return render_template(
-            'welcome.html', club=club, competitions=competitions, now=now
-        ), 403
+        flash(
+            "Les inscriptions sont fermées pour cette compétition.", 'error'
+        )
+        return renderClubDashboard(club, 403)
 
     try:
-        placesRequired = int(request.form['places'])
-    except (ValueError, TypeError, KeyError):
-        flash("Veuillez saisir un nombre valide de places.")
-        return render_template(
-            'welcome.html', club=club, competitions=competitions, now=now
-        ), 400
+        placesRequired = int(form_places)
+    except (ValueError, TypeError):
+        flash("Veuillez saisir un nombre valide de places.", 'error')
+        return renderBooking(club, competition, 400, form_places)
 
     if placesRequired <= 0:
-        flash("Veuillez saisir un nombre de places supérieur à 0.")
-        return render_template(
-            'welcome.html', club=club, competitions=competitions, now=now
-        ), 400
+        flash("Veuillez saisir un nombre de places supérieur à 0.", 'error')
+        return renderBooking(club, competition, 400, form_places)
 
-    # Suivi des places déjà réservées par ce club pour cette compétition
-    booked = club.setdefault('booked', {})
-    already_booked = booked.get(competition['name'], 0)
+    already_booked = getBookedPlaces(club, competition)
+    quota_remaining = getQuotaRemaining(club, competition)
 
-    if already_booked + placesRequired > 12:
+    if already_booked + placesRequired > MAX_PLACES_PER_COMPETITION:
         flash(
-            "Vous ne pouvez pas réserver plus de 12 places au total "
-            "pour une compétition."
+            "Vous ne pouvez pas réserver plus de "
+            f"{MAX_PLACES_PER_COMPETITION} places au total "
+            "pour une compétition.",
+            'error',
         )
-        return render_template(
-            'welcome.html', club=club, competitions=competitions, now=now
-        ), 400
+        return renderBooking(club, competition, 400, form_places)
 
     if placesRequired > int(competition['numberOfPlaces']):
         flash(
-            "Il n'y a pas assez de places disponibles dans cette compétition."
+            "Il n'y a pas assez de places disponibles dans cette compétition.",
+            'error',
         )
-        return render_template(
-            'welcome.html', club=club, competitions=competitions, now=now
-        ), 400
+        return renderBooking(club, competition, 400, form_places)
 
     if placesRequired > int(club['points']):
         flash(
             "Vous n'avez pas assez de points pour réserver "
-            "ce nombre de places."
+            "ce nombre de places.",
+            'error',
         )
-        return render_template(
-            'welcome.html', club=club, competitions=competitions, now=now
-        ), 400
+        return renderBooking(club, competition, 400, form_places)
 
-    places_int = int(competition['numberOfPlaces']) - placesRequired
-    competition['numberOfPlaces'] = places_int
+    booked = club.setdefault('booked', {})
+    competition['numberOfPlaces'] = (
+        int(competition['numberOfPlaces']) - placesRequired
+    )
     club['points'] = int(club['points']) - placesRequired
     booked[competition['name']] = already_booked + placesRequired
+    recordPointsChange(
+        club,
+        -placesRequired,
+        f"Réservation — {competition['name']}",
+        author=club['name'],
+        entry_type='reservation',
+    )
     saveClubs()
     saveCompetitions()
-    flash('Great-booking complete!')
-    return render_template(
-        'welcome.html', club=club, competitions=competitions, now=now
+    quota_after = max(0, quota_remaining - placesRequired)
+    flash(
+        f"Réservation confirmée : {placesRequired} place(s) pour "
+        f"« {competition['name']} ». Nouveau solde : {club['points']} "
+        f"point(s), quota restant : {quota_after}/"
+        f"{MAX_PLACES_PER_COMPETITION}.",
+        'success',
+    )
+    return redirect(
+        url_for(
+            'clubDashboard',
+            club_name=club['name'],
+            _anchor='mes-reservations',
+        ),
+        code=303,
     )
 
 
@@ -273,7 +467,7 @@ def displayBoard():
 @app.route('/logout')
 def logout():
     session.clear()
-    flash("Vous avez été déconnecté avec succès.")
+    flash("Vous avez été déconnecté avec succès.", 'success')
     return redirect(url_for('index'))
 
 

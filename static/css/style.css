@@ -128,6 +128,12 @@ nav {
   border-radius: var(--radius);
 }
 
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  border-radius: var(--radius-sm);
+}
+
 .btn-block { width: 100%; justify-content: center; }
 
 .btn svg { width: 15px; height: 15px; stroke-width: 2; flex-shrink: 0; }
@@ -200,15 +206,20 @@ nav {
   font-size: 0.85rem;
   font-weight: 500;
 }
-.flash-error li {
+.flash-error li, .flash-list li.flash-error {
   background: var(--danger-bg);
   border: 1px solid var(--danger-border);
   color: var(--danger);
 }
-.flash-success li {
+.flash-success li, .flash-list li.flash-success {
   background: var(--success-bg);
   border: 1px solid var(--success-border);
   color: var(--success);
+}
+.flash-info li, .flash-list li.flash-info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
 }
 
 .badge {
