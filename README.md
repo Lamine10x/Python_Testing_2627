@@ -19,7 +19,7 @@ compétitions.
 - [Rapport Flake8](#rapport-flake8)
 - [Tests de performance](#tests-de-performance)
 - [Ressources](#ressources)
-- [Conventions Git](#conventions-git)
+- [Conventions Git et workflow](#conventions-git-et-workflow)
 - [Structure du projet](#structure-du-projet)
 
 ## Fonctionnalités
@@ -281,14 +281,90 @@ Les seuils du cahier des charges sont respectés :
 - Documentation Flake8 : <https://flake8.pycqa.org/>
 - Documentation Locust : <https://docs.locust.io/>
 
-## Conventions Git
+## Conventions Git et workflow
+
+### Nommage des branches
 
 - Branche principale : `main`.
 - Branches de travail : `<type>/nom-descriptif`, par exemple
   `bug/correction-reservation` ou `feature/tableau-public`.
 - Types utilisés : `bug/`, `feature/` et `improvement/`.
 - Une branche porte un seul correctif ou une seule fonctionnalité.
-- La branche `QA` sert à la revue finale et n'est pas fusionnée dans `main`.
+- Les branches mergées sont conservées pour garder la traçabilité.
+
+### Workflow de livraison
+
+1. Créer la branche depuis `main` avant de commencer :
+
+   ```powershell
+   git switch main
+   git pull origin main
+   git switch -c feature/nom-de-la-fonctionnalite
+   ```
+
+2. Développer, tester et commiter sur la branche.
+
+3. Pousser la branche et, si nécessaire, ouvrir une pull request :
+
+   ```powershell
+   git push -u origin feature/nom-de-la-fonctionnalite
+   ```
+
+4. Intégrer dans `main` avec un commit de merge explicite :
+
+   ```powershell
+   git switch main
+   git merge --no-ff feature/nom-de-la-fonctionnalite `
+     -m "Merge : nom de la fonctionnalite"
+   git push origin main
+   ```
+
+5. Après validation, aligner `QA` sur `main` :
+
+   ```powershell
+   git branch -f QA main
+   git push --force-with-lease origin QA
+   ```
+
+Le merge `--no-ff` est obligatoire même lorsque Git pourrait faire un
+fast-forward : l'historique doit garder une trace visible de la branche.
+
+### État des branches
+
+Au moment de cette mise à jour, toutes les branches de travail sont mergées
+dans `main` :
+
+| Branche | Commit | État |
+| --- | --- | --- |
+| `main` | dernier commit | Branche de livraison |
+| `QA` | = `main` | Miroir de `main` pour la revue finale |
+| `feature/gestion-points-et-inscriptions` | `06cd9b0` | Mergée |
+| `feature/classement-public-par-competition` | `8e5f975` | Mergée |
+| `feature/tableau-de-bord-admin` | `88aa5ca` | Mergée |
+| `feature/tableau-public-points-clubs` | `9c4b08a` | Mergée |
+| `bug/...` | — | Toutes mergées |
+
+Historique récent :
+
+```text
+*   Merge : classement public par competition
+|\
+| * Feature : classement public par competition
+* | Merge : gestion des points et des inscriptions
+|\|
+| * Feature : gestion des points et des inscriptions
+|/
+* Fix : chargement de admin.json avec BOM UTF-8
+```
+
+Vérification :
+
+```powershell
+git branch --no-merged main
+git branch -r --no-merged main
+```
+
+Les deux commandes ne doivent retourner aucune branche.
 
 ## Structure du projet
 
