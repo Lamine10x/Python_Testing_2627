@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, flash, url_for
+from flask import Flask, render_template, request, redirect, flash, url_for, session
 
 
 def loadClubs():
@@ -131,4 +131,6 @@ def purchasePlaces():
 
 @app.route('/logout')
 def logout():
+    session.clear()
+    flash("Vous avez été déconnecté avec succès.")
     return redirect(url_for('index'))
