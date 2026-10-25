@@ -7,7 +7,10 @@ def test_connexion_reussie(client):
         '/showSummary', data={'email': 'john@simplylift.co'}
     )
     assert response.status_code == 200
-    assert "Welcome, john@simplylift.co" in response.get_data(as_text=True)
+    contenu = response.get_data(as_text=True)
+    assert "Simply Lift" in contenu
+    assert "john@simplylift.co" in contenu
+    assert "Tableau de bord" in contenu
 
 
 def test_connexion_email_inconnu(client):

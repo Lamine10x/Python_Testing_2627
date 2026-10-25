@@ -1,17 +1,170 @@
-<html lang="en">
+﻿<!DOCTYPE html>
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking for {{competition['name']}} || GUDLFT</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Réserver — {{ competition['name'] }} | GUDLFT">
+  <title>Réserver — {{ competition['name'] }} | GUDLFT</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body { background: var(--bg-2); }
+
+    .book-wrapper {
+      min-height: calc(100vh - 56px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    .book-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 36px;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      margin-bottom: 28px;
+      transition: color var(--transition);
+    }
+    .back-link:hover { color: var(--text); }
+    .back-link svg { width: 14px; height: 14px; stroke-width: 2; }
+
+    .book-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .book-sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .info-cell {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+
+    .info-cell-label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 4px;
+    }
+
+    .info-cell-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    .book-form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .book-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+    }
+  </style>
 </head>
 <body>
-    <h2>{{competition['name']}}</h2>
-    Places available: {{competition['numberOfPlaces']}}
-    <form action="{{ url_for('purchasePlaces') }}" method="post">
-        <input type="hidden" name="club" value="{{club['name']}}">
-        <input type="hidden" name="competition" value="{{competition['name']}}">
-        <label for="places">How many places?</label><input type="number" name="places" id="places" min="1" max="12" required />
-        <button type="submit">Book</button>
-    </form>
+  <nav>
+    <a class="nav-brand" href="{{ url_for('index') }}">GUDLFT</a>
+    <div class="nav-links">
+      <span class="badge badge-default">{{ club['name'] }}</span>
+      <a href="{{ url_for('logout') }}" class="btn btn-danger btn" id="btn-logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Déconnexion
+      </a>
+    </div>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="book-wrapper">
+      <div class="book-card">
+        <a href="javascript:history.back()" class="back-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Retour au tableau de bord
+        </a>
+
+        <h1 class="book-title">{{ competition['name'] }}</h1>
+        <p class="book-sub">Confirmez votre réservation de places</p>
+
+        <div class="info-grid">
+          <div class="info-cell">
+            <div class="info-cell-label">Places disponibles</div>
+            <div class="info-cell-value">{{ competition['numberOfPlaces'] }}</div>
+          </div>
+          <div class="info-cell">
+            <div class="info-cell-label">Vos points</div>
+            <div class="info-cell-value">{{ club['points'] }}</div>
+          </div>
+        </div>
+
+        <hr class="book-divider" style="margin-bottom:24px;">
+
+        <form class="book-form" action="{{ url_for('purchasePlaces') }}" method="post" id="booking-form">
+          <input type="hidden" name="club" value="{{ club['name'] }}">
+          <input type="hidden" name="competition" value="{{ competition['name'] }}">
+
+          <div class="input-group">
+            <label for="places">Nombre de places</label>
+            <input
+              type="number"
+              name="places"
+              id="places"
+              min="1"
+              max="12"
+              placeholder="Entre 1 et 12"
+              required
+            />
+            <span class="input-hint">1 place = 1 point · Max. 12 places par club par compétition</span>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg btn-block" id="btn-confirm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:16px;height:16px;stroke-width:2;"><path d="M20 6L9 17l-5-5"/></svg>
+            Confirmer la réservation
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

@@ -1,0 +1,46 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Gestion des clubs | GUDLFT Admin{% endblock %}
+{% block page_title %}Clubs{% endblock %}
+
+{% block content %}
+<div class="admin-toolbar">
+  <h2 class="admin-section-title">Liste des clubs ({{ clubs|length }})</h2>
+  <a href="{{ url_for('adminAddClub') }}" class="btn btn-primary btn-sm">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Ajouter un club
+  </a>
+</div>
+
+<div class="admin-card">
+  {% if clubs %}
+  <table class="admin-table" id="clubs-admin-table">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>Email</th>
+        <th>Points</th>
+        <th style="text-align:right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for club in clubs %}
+      <tr>
+        <td class="name-col">{{ club['name'] }}</td>
+        <td>{{ club['email'] }}</td>
+        <td><span class="badge badge-default">{{ club['points'] }} pts</span></td>
+        <td class="actions">
+          <a href="{{ url_for('adminEditClub', club_name=club['name']) }}" class="btn btn-secondary btn-sm">Modifier</a>
+          <form class="inline-form" action="{{ url_for('adminDeleteClub', club_name=club['name']) }}" method="post" onsubmit="return confirm('Supprimer ce club ?');">
+            <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="admin-empty">Aucun club enregistré. Ajoutez votre premier club.</p>
+  {% endif %}
+</div>
+{% endblock %}

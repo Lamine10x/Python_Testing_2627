@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Connexion à l'administration GUDLFT">
+  <title>Connexion admin | GUDLFT</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(15,23,42,0.06), transparent 34%),
+        radial-gradient(circle at 85% 85%, rgba(15,23,42,0.05), transparent 32%),
+        var(--bg-2);
+    }
+
+    .admin-login-card {
+      width: 100%;
+      max-width: 410px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 34px;
+      animation: loginFadeUp 0.4s ease both;
+    }
+
+    @keyframes loginFadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .admin-login-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+
+    .admin-login-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .admin-login-sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .admin-login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .admin-login-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+    }
+
+    .admin-login-footer a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+
+    .admin-login-footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <main class="admin-login-card">
+    <div class="admin-login-top">
+      <a class="nav-brand" href="{{ url_for('index') }}">GUDLFT</a>
+      <span class="badge badge-dark">Administration</span>
+    </div>
+
+    <h1 class="admin-login-title">Connexion administrateur</h1>
+    <p class="admin-login-sub">
+      Accédez à la gestion des clubs et des compétitions.
+    </p>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul class="flash-list flash-error" style="margin-bottom:18px;">
+      {% for message in messages %}<li>{{ message }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+
+    <form class="admin-login-form" action="{{ url_for('adminLogin') }}" method="post" id="form-admin-login">
+      <div class="input-group">
+        <label for="email">Adresse email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="admin@gudlft.com"
+          autocomplete="username"
+          required
+          autofocus
+        />
+      </div>
+
+      <div class="input-group">
+        <label for="password">Mot de passe</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Votre mot de passe"
+          autocomplete="current-password"
+          required
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg btn-block" id="btn-admin-login">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Se connecter
+      </button>
+    </form>
+
+    <div class="admin-login-footer">
+      <a href="{{ url_for('index') }}">← Portail club</a>
+      <a href="{{ url_for('displayBoard') }}">Classement public</a>
+    </div>
+  </main>
+</body>
+</html>

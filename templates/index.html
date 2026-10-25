@@ -1,32 +1,331 @@
-<html lang="en">
-
+﻿<!DOCTYPE html>
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GUDLFT Registration</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="GUDLFT Registration Portal">
+  <title>GUDLFT — Portal</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body { overflow: hidden; height: 100vh; }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      height: 100vh;
+    }
+
+    /* ── LEFT PANEL ── */
+    .panel-left {
+      position: relative;
+      background: var(--dark);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 80px 72px;
+    }
+
+    .grid-layer {
+      position: absolute;
+      inset: -10%;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 56px 56px;
+      animation: gridDrift 18s linear infinite;
+    }
+
+    @keyframes gridDrift {
+      from { transform: translate(0, 0); }
+      to   { transform: translate(56px, 56px); }
+    }
+
+    .scan-line {
+      position: absolute;
+      left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+      animation: scanMove 6s ease-in-out infinite;
+    }
+    @keyframes scanMove {
+      0%   { top: -2px; opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+
+    .left-content {
+      position: relative;
+      z-index: 2;
+      animation: fadeSlideUp 0.7s ease both;
+    }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .left-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 24px;
+    }
+
+    .left-eyebrow svg { width: 13px; height: 13px; stroke: rgba(255,255,255,0.4); }
+
+    .left-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2rem, 3.5vw, 3rem);
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+
+    .left-title em {
+      font-style: normal;
+      color: rgba(255,255,255,0.45);
+    }
+
+    .left-desc {
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.4);
+      line-height: 1.75;
+      max-width: 360px;
+      margin-bottom: 48px;
+    }
+
+    .features {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      transition: background var(--transition), border-color var(--transition);
+      animation: fadeSlideUp 0.7s ease both;
+      cursor: default;
+    }
+
+    .feature-item:nth-child(1) { animation-delay: 0.1s; }
+    .feature-item:nth-child(2) { animation-delay: 0.2s; }
+    .feature-item:nth-child(3) { animation-delay: 0.3s; }
+
+    .feature-item:hover {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.06);
+    }
+
+    .feat-icon {
+      width: 34px; height: 34px;
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .feat-icon svg { width: 15px; height: 15px; stroke: rgba(255,255,255,0.6); stroke-width: 1.75; }
+
+    .feat-text strong {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.75);
+    }
+    .feat-text span {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.35);
+    }
+
+    /* ── RIGHT PANEL ── */
+    .panel-right {
+      background: var(--bg);
+      border-left: 1px solid rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 56px 48px;
+      animation: fadeIn 0.5s ease 0.2s both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .login-header { margin-bottom: 36px; }
+
+    .login-logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+      margin-bottom: 28px;
+      display: inline-block;
+    }
+
+    .login-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.025em;
+      margin-bottom: 6px;
+    }
+
+    .login-sub {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .login-footer {
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      color: var(--text-subtle);
+    }
+
+    .login-footer a {
+      color: var(--text-muted);
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: color var(--transition);
+    }
+
+    .login-footer a:hover { color: var(--text); }
+    .login-footer svg { width: 14px; height: 14px; stroke-width: 2; }
+    .login-footer .admin-link { margin-left: auto; }
+  </style>
 </head>
-
 <body>
-    <h1>Welcome to the GUDLFT Registration Portal!</h1>
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-    <ul>
-        {% for message in messages %}
-        <li>{{ message }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-    {% endwith %}
-    Please enter your secretary email to continue:
-    <form action="{{ url_for('showSummary') }}" method="post">
-        <label for="email">Email:</label>
-        <input type="email" name="email" id="email" required />
-        <button type="submit">Enter</button>
-    </form>
-    <hr />
-    <p>
-        <a href="{{ url_for('displayBoard') }}">View Club Points Board</a>
-    </p>
-</body>
+  <div class="split">
+    <div class="panel-left">
+      <div class="grid-layer"></div>
+      <div class="scan-line"></div>
 
+      <div class="left-content">
+        <span class="left-eyebrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          Powerlifting Federation
+        </span>
+
+        <h1 class="left-title">
+          GUDLFT<br><em>Registration</em><br>Portal
+        </h1>
+
+        <p class="left-desc">
+          Gérez les réservations de votre club, suivez vos points et accédez aux compétitions depuis un seul espace.
+        </p>
+
+        <div class="features">
+          <div class="feature-item">
+            <div class="feat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div class="feat-text">
+              <strong>Réservation de places</strong>
+              <span>Jusqu'à 12 places par compétition</span>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            </div>
+            <div class="feat-text">
+              <strong>Suivi des points</strong>
+              <span>Déduction automatique à chaque réservation</span>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3h18v18H3zM3 9h18M9 21V9"/></svg>
+            </div>
+            <div class="feat-text">
+              <strong>Tableau public</strong>
+              <span>Classement ouvert, sans connexion</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-right">
+      <div class="login-header">
+        <a class="login-logo" href="/">GUDLFT</a>
+        <h2 class="login-title">Connexion</h2>
+        <p class="login-sub">Entrez l'adresse email de votre secrétaire</p>
+      </div>
+
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <ul class="flash-list flash-error" style="margin-bottom:18px;">
+        {% for message in messages %}<li>{{ message }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+      {% endwith %}
+
+      <form class="login-form" action="{{ url_for('showSummary') }}" method="post" id="login-form">
+        <div class="input-group">
+          <label for="email">Adresse email</label>
+          <input
+            type="email"
+            name="email"
+            id="email"
+            placeholder="secretaire@club.com"
+            autocomplete="email"
+            required
+          />
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block" id="btn-login">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:16px;height:16px;stroke-width:2;"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Accéder au portail
+        </button>
+      </form>
+
+      <div class="login-footer">
+        <a href="{{ url_for('displayBoard') }}" id="link-board">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          Voir le tableau des points
+        </a>
+        <a href="{{ url_for('adminLogin') }}" id="link-admin" class="admin-link">
+          Administration
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script>if(typeof lucide !== 'undefined') lucide.createIcons();</script>
+</body>
 </html>

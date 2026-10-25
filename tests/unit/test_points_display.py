@@ -6,14 +6,14 @@ def test_display_board_public_access(client):
     """Vérifie que la route /displayBoard est accessible publiquement (200)."""
     response = client.get('/displayBoard')
     assert response.status_code == 200
-    assert "Club Points Board" in response.get_data(as_text=True)
+    assert "Points des clubs" in response.get_data(as_text=True)
 
 
 def test_points_alias_access(client):
     """Vérifie que la route alias /points est également accessible."""
     response = client.get('/points')
     assert response.status_code == 200
-    assert "Club Points Board" in response.get_data(as_text=True)
+    assert "Points des clubs" in response.get_data(as_text=True)
 
 
 def test_display_board_renders_all_clubs_and_points(client):

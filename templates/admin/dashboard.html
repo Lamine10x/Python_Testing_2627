@@ -1,0 +1,96 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Tableau de bord admin | GUDLFT{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+
+{% block content %}
+<div class="admin-stats">
+  <div class="admin-stat">
+    <div class="admin-stat-label">Clubs inscrits</div>
+    <div class="admin-stat-value">{{ clubs|length }}</div>
+  </div>
+  <div class="admin-stat">
+    <div class="admin-stat-label">Compétitions</div>
+    <div class="admin-stat-value">{{ competitions|length }}</div>
+  </div>
+  <div class="admin-stat">
+    <div class="admin-stat-label">Points cumulés</div>
+    <div class="admin-stat-value">{{ clubs|sum(attribute='points') }}</div>
+  </div>
+</div>
+
+<div class="quick-links">
+  <a href="{{ url_for('adminAddClub') }}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Ajouter un club
+  </a>
+  <a href="{{ url_for('adminAddCompetition') }}" class="btn btn-secondary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Ajouter une compétition
+  </a>
+  <a href="{{ url_for('displayBoard') }}" class="btn btn-ghost">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+    Voir le classement public
+  </a>
+</div>
+
+<div class="admin-grid">
+  <section>
+    <div class="admin-toolbar">
+      <h2 class="admin-section-title">Derniers clubs</h2>
+      <a href="{{ url_for('adminClubs') }}" class="btn btn-ghost btn-sm">Gérer les clubs →</a>
+    </div>
+    <div class="admin-card">
+      {% if clubs %}
+      <table class="admin-table" id="dashboard-clubs-table">
+        <thead>
+          <tr>
+            <th>Club</th>
+            <th>Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for club in clubs[:5] %}
+          <tr>
+            <td class="name-col">{{ club['name'] }}</td>
+            <td><span class="badge badge-default">{{ club['points'] }} pts</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="admin-empty">Aucun club enregistré.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section>
+    <div class="admin-toolbar">
+      <h2 class="admin-section-title">Compétitions</h2>
+      <a href="{{ url_for('adminCompetitions') }}" class="btn btn-ghost btn-sm">Gérer les compétitions →</a>
+    </div>
+    <div class="admin-card">
+      {% if competitions %}
+      <table class="admin-table" id="dashboard-competitions-table">
+        <thead>
+          <tr>
+            <th>Compétition</th>
+            <th>Places</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for comp in competitions[:5] %}
+          <tr>
+            <td class="name-col">{{ comp['name'] }}</td>
+            <td><span class="badge badge-default">{{ comp['numberOfPlaces'] }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="admin-empty">Aucune compétition enregistrée.</p>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

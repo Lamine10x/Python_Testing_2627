@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interface d'administration GUDLFT">
+  <title>{% block title %}Administration | GUDLFT{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body { background: var(--bg-2); }
+
+    .nav-admin-tag {
+      display: inline-block;
+      margin-left: 7px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      background: var(--accent);
+      color: #ffffff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      vertical-align: 2px;
+    }
+
+    .admin-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 30px 0;
+      animation: adminFadeDown 0.35s ease both;
+    }
+
+    @keyframes adminFadeDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .admin-header-inner {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .admin-eyebrow {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-subtle);
+      margin-bottom: 5px;
+    }
+
+    .admin-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--text);
+    }
+
+    .admin-content {
+      padding: 28px 0 64px;
+      animation: adminFadeUp 0.4s ease 0.08s both;
+    }
+
+    @keyframes adminFadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .admin-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .admin-section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .admin-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .admin-table thead tr {
+      background: var(--bg-2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .admin-table thead th {
+      padding: 11px 18px;
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .admin-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background var(--transition);
+    }
+
+    .admin-table tbody tr:last-child { border-bottom: none; }
+    .admin-table tbody tr:hover { background: var(--bg-2); }
+
+    .admin-table tbody td {
+      padding: 14px 18px;
+      font-size: 0.88rem;
+      color: var(--text);
+      vertical-align: middle;
+    }
+
+    .admin-table .name-col { font-weight: 500; }
+    .admin-table .actions { text-align: right; white-space: nowrap; }
+
+    .admin-table .actions .btn + .inline-form,
+    .admin-table .actions .inline-form + .btn { margin-left: 5px; }
+
+    .inline-form { display: inline; }
+
+    .btn-sm {
+      padding: 5px 11px;
+      font-size: 0.78rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .admin-empty {
+      padding: 30px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    .admin-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .admin-stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 17px 18px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .admin-stat-label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    .admin-stat-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+
+    .quick-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 26px;
+    }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .admin-grid .admin-toolbar { margin-bottom: 10px; }
+
+    .form-card {
+      width: 100%;
+      max-width: 560px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      padding: 28px;
+    }
+
+    .form-card form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .form-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-top: 4px;
+    }
+
+    .form-intro {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .flash-info li {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
+    }
+
+    @media (max-width: 820px) {
+      .admin-grid { grid-template-columns: 1fr; }
+      .admin-stats { grid-template-columns: 1fr; }
+      .admin-header-inner { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (max-width: 640px) {
+      nav { padding: 0 16px; }
+      .nav-links { gap: 6px; }
+      .nav-links .btn { padding: 6px 9px; font-size: 0.78rem; }
+      .admin-table thead th:nth-child(2),
+      .admin-table tbody td:nth-child(2) { display: none; }
+      .form-card { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="nav-brand" href="{{ url_for('adminDashboard') }}">
+      GUDLFT<span class="nav-admin-tag">Admin</span>
+    </a>
+    <div class="nav-links">
+      <a href="{{ url_for('adminDashboard') }}" class="btn btn-ghost">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Tableau de bord
+      </a>
+      <a href="{{ url_for('adminClubs') }}" class="btn btn-ghost">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Clubs
+      </a>
+      <a href="{{ url_for('adminCompetitions') }}" class="btn btn-ghost">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Compétitions
+      </a>
+      <a href="{{ url_for('adminLogout') }}" class="btn btn-danger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Déconnexion
+      </a>
+    </div>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="admin-header">
+      <div class="container">
+        <div class="admin-header-inner">
+          <div>
+            <p class="admin-eyebrow">Administration</p>
+            <h1 class="admin-title">{% block page_title %}Tableau de bord{% endblock %}</h1>
+          </div>
+          <span class="badge badge-dark">{{ admin_name|default('Administrateur') }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-content">
+      <div class="container">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <ul class="flash-list flash-info" style="margin-bottom:18px;">
+          {% for message in messages %}<li>{{ message }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+  </div>
+</body>
+</html>
