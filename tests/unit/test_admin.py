@@ -49,10 +49,12 @@ def test_admin_unauthorized_redirects_and_flashes(client):
     ('get', '/admin/clubs'),
     ('get', '/admin/clubs/add'),
     ('get', '/admin/clubs/edit/Simply%20Lift'),
+    ('get', '/admin/clubs/Simply%20Lift/points'),
     ('post', '/admin/clubs/delete/Simply%20Lift'),
     ('get', '/admin/competitions'),
     ('get', '/admin/competitions/add'),
     ('get', '/admin/competitions/edit/Future%20Open'),
+    ('post', '/admin/competitions/Future%20Open/toggle-registration'),
     ('post', '/admin/competitions/delete/Future%20Open'),
 ])
 def test_admin_routes_require_login(client, method, path):
@@ -134,6 +136,7 @@ def test_admin_competitions_list(client):
     assert 'Future Open' in content
     assert '2099-06-15 10:00:00' in content
     assert 'Ajouter une compétition' in content
+    assert 'Ouvertes' in content
 
 
 def test_admin_add_club(client):
@@ -265,6 +268,7 @@ def test_admin_add_competition(client):
     )
     assert comp['date'] == '2099-01-01 10:00:00'
     assert comp['numberOfPlaces'] == 30
+    assert comp['registration_open'] is True
 
 
 def test_admin_add_competition_invalid_places(client):
@@ -322,6 +326,7 @@ def test_admin_edit_competition(client):
     assert comp['date'] == '2099-07-01 12:30:00'
     assert comp['numberOfPlaces'] == 40
     assert isinstance(comp['numberOfPlaces'], int)
+    assert comp['registration_open'] is True
 
 
 def test_admin_edit_competition_invalid_places(client):
@@ -402,7 +407,16 @@ def test_save_functions_write_json(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(
         server, 'clubs',
-        [{'name': 'Test', 'email': 'test@club.com', 'points': 3}]
+        [{
+            'name': 'Test',
+            'email': 'test@club.com',
+            'points': 3,
+            'points_history': [{
+                'amount': 2,
+                'reason': 'Bonus été',
+                'balance': 3,
+            }],
+        }]
     )
     monkeypatch.setattr(
         server, 'competitions',
@@ -410,6 +424,7 @@ def test_save_functions_write_json(tmp_path, monkeypatch):
             'name': 'Comp',
             'date': '2099-01-01 00:00:00',
             'numberOfPlaces': 5,
+            'registration_open': False,
         }]
     )
     monkeypatch.setattr(server, 'saveClubs', REAL_SAVE_CLUBS)
@@ -425,4 +440,7 @@ def test_save_functions_write_json(tmp_path, monkeypatch):
         (tmp_path / 'competitions.json').read_text(encoding='utf-8')
     )
     assert clubs_data['clubs'][0]['points'] == 3
+    assert clubs_data['clubs'][0]['points_history'][0]['amount'] == 2
+    assert clubs_data['clubs'][0]['points_history'][0]['reason'] == 'Bonus été'
     assert comps_data['competitions'][0]['numberOfPlaces'] == 5
+    assert comps_data['competitions'][0]['registration_open'] is False

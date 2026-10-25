@@ -21,6 +21,15 @@ def test_load_competitions_places_sont_entiers():
         )
 
 
+def test_load_competitions_inscriptions_sont_booleennes():
+    """Vérifie que l'état des inscriptions est chargé en booléen."""
+    loaded_comps = loadCompetitions()
+    for comp in loaded_comps:
+        assert isinstance(comp['registration_open'], bool), (
+            f"L'état des inscriptions de {comp['name']} n'est pas un booléen."
+        )
+
+
 def test_reservation_maintient_types_entiers(client):
     """Vérifie le maintien du type entier après réservation."""
     club = [c for c in clubs if c['name'] == 'Simply Lift'][0]

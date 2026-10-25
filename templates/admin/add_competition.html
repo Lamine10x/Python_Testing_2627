@@ -27,6 +27,12 @@
       <input type="number" id="numberOfPlaces" name="numberOfPlaces" value="25" min="0" step="1" required />
     </div>
 
+    <div class="input-group checkbox-group">
+      <input type="checkbox" id="registration_open" name="registration_open" value="on" checked />
+      <label for="registration_open">Inscriptions ouvertes</label>
+      <input type="hidden" name="registration_open" value="off" />
+    </div>
+
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Ajouter la compétition</button>
       <a href="{{ url_for('adminCompetitions') }}" class="btn btn-ghost">Annuler</a>

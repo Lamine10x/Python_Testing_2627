@@ -4,7 +4,9 @@ Application Flask de démonstration pour la gestion des réservations de places
 de compétitions par les clubs de powerlifting.
 
 Le projet couvre les correctifs de la Phase 1, le tableau public des points
-(Phase 2) et une interface d'administration complète.
+(Phase 2) et une interface d'administration complète, y compris la gestion
+des points des clubs et l'ouverture ou la fermeture des inscriptions aux
+compétitions.
 
 ## Sommaire
 
@@ -64,8 +66,25 @@ Le projet couvre les correctifs de la Phase 1, le tableau public des points
   - ajout ;
   - modification ;
   - suppression.
+- Gestion des points des clubs :
+  - crédit ou débit d'un montant entier positif ;
+  - motif facultatif ;
+  - contrôle du solde pour interdire un solde négatif ;
+  - historique horodaté des ajustements avec l'administrateur, le motif et
+    le solde après opération.
+- Ouverture et fermeture des inscriptions par compétition :
+  - bouton d'action direct depuis la liste des compétitions ;
+  - case à cocher dans les formulaires d'ajout et de modification ;
+  - blocage des réservations lorsque les inscriptions sont fermées ;
+  - affichage de l'état sur le tableau de bord club.
 - Templates dédiés dans `templates/admin/`.
 - Identifiants stockés dans `admin.json`.
+- Les ajustements de points sont conservés dans le champ `points_history`
+  de chaque club ; l'état des inscriptions est stocké dans le champ
+  `registration_open` de chaque compétition.
+- Accès rapide : dans `Admin > Clubs`, le bouton `Points` ouvre la gestion
+  des points ; dans `Admin > Compétitions`, le bouton `Fermer` ou `Ouvrir`
+  change l'état des inscriptions.
 
 ## Technologies
 
@@ -170,7 +189,7 @@ Le rapport HTML est disponible dans `htmlcov/index.html`.
 ### Résultat actuel
 
 ```text
-67 tests passent
+88 tests passent
 Couverture de server.py : 100 %
 ```
 

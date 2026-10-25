@@ -19,6 +19,9 @@ def loadCompetitions():
         listOfCompetitions = json.load(comps)['competitions']
         for comp in listOfCompetitions:
             comp['numberOfPlaces'] = int(comp['numberOfPlaces'])
+            comp['registration_open'] = bool(
+                comp.get('registration_open', True)
+            )
         return listOfCompetitions
 
 
@@ -28,13 +31,28 @@ def loadAdmins():
 
 
 def saveClubs():
-    with open('clubs.json', 'w') as f:
-        json.dump({'clubs': clubs}, f, indent=4)
+    with open('clubs.json', 'w', encoding='utf-8') as f:
+        json.dump({'clubs': clubs}, f, indent=4, ensure_ascii=False)
 
 
 def saveCompetitions():
-    with open('competitions.json', 'w') as f:
-        json.dump({'competitions': competitions}, f, indent=4)
+    with open('competitions.json', 'w', encoding='utf-8') as f:
+        json.dump(
+            {'competitions': competitions}, f, indent=4, ensure_ascii=False
+        )
+
+
+def recordPointsChange(club, amount, reason):
+    """Ajoute une operation a l'historique des points d'un club."""
+    history = club.setdefault('points_history', [])
+    history.insert(0, {
+        'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'admin': session.get('admin_name', 'Administrateur'),
+        'amount': amount,
+        'reason': reason,
+        'balance': int(club['points']),
+    })
+    del history[50:]
 
 
 app = Flask(__name__)
@@ -104,6 +122,12 @@ def book(competition, club):
             'welcome.html', club=foundClub, competitions=competitions, now=now
         ), 400
 
+    if not foundCompetition.get('registration_open', True):
+        flash("Les inscriptions sont fermées pour cette compétition.")
+        return render_template(
+            'welcome.html', club=foundClub, competitions=competitions, now=now
+        ), 403
+
     return render_template(
         'booking.html', club=foundClub, competition=foundCompetition
     )
@@ -139,6 +163,12 @@ def purchasePlaces():
         return render_template(
             'welcome.html', club=club, competitions=competitions, now=now
         ), 400
+
+    if not competition.get('registration_open', True):
+        flash("Les inscriptions sont fermées pour cette compétition.")
+        return render_template(
+            'welcome.html', club=club, competitions=competitions, now=now
+        ), 403
 
     try:
         placesRequired = int(request.form['places'])
@@ -271,15 +301,85 @@ def adminEditClub(club_name):
         except ValueError:
             flash("Valeur de points invalide.")
             return redirect(url_for('adminEditClub', club_name=club_name))
+        old_points = int(club['points'])
         club['name'] = request.form.get('name', club['name']).strip()
         club['email'] = request.form.get('email', club['email']).strip()
         club['points'] = new_points
+        if new_points != old_points:
+            recordPointsChange(
+                club, new_points - old_points, 'Modification via la fiche club'
+            )
         saveClubs()
         flash(f"Club '{club['name']}' mis à jour.")
         return redirect(url_for('adminClubs'))
     return render_template(
         'admin/edit_club.html',
         club=club,
+        admin_name=session.get('admin_name')
+    )
+
+
+@app.route('/admin/clubs/<club_name>/points', methods=['GET', 'POST'])
+@admin_required
+def adminClubPoints(club_name):
+    club = next((c for c in clubs if c['name'] == club_name), None)
+    if not club:
+        flash("Club introuvable.")
+        return redirect(url_for('adminClubs'))
+
+    if request.method == 'POST':
+        operation = request.form.get('operation', 'credit')
+        if operation not in ('credit', 'debit'):
+            flash("Opération invalide.")
+            return redirect(
+                url_for('adminClubPoints', club_name=club_name)
+            )
+
+        try:
+            amount = int(request.form.get('amount', '0'))
+        except (TypeError, ValueError):
+            flash("Montant invalide : saisissez un nombre entier.")
+            return redirect(
+                url_for('adminClubPoints', club_name=club_name)
+            )
+
+        if amount <= 0:
+            flash("Le montant doit être un entier supérieur à 0.")
+            return redirect(
+                url_for('adminClubPoints', club_name=club_name)
+            )
+
+        delta = amount if operation == 'credit' else -amount
+        new_points = int(club['points']) + delta
+        if new_points < 0:
+            flash(
+                "Le solde du club ne peut pas devenir négatif. "
+                f"Solde actuel : {club['points']} points."
+            )
+            return redirect(
+                url_for('adminClubPoints', club_name=club_name)
+            )
+
+        reason = request.form.get('reason', '').strip()
+        if not reason:
+            reason = 'Ajustement manuel'
+
+        club['points'] = new_points
+        recordPointsChange(club, delta, reason)
+        saveClubs()
+
+        action = 'crédité(s)' if delta > 0 else 'débité(s)'
+        flash(
+            f"{amount} point(s) {action} au club '{club['name']}'. "
+            f"Nouveau solde : {new_points} points."
+        )
+        return redirect(url_for('adminClubPoints', club_name=club_name))
+
+    history = club.get('points_history', [])[:20]
+    return render_template(
+        'admin/club_points.html',
+        club=club,
+        history=history,
         admin_name=session.get('admin_name')
     )
 
@@ -346,6 +446,9 @@ def adminEditCompetition(comp_name):
         comp['name'] = request.form.get('name', comp['name']).strip()
         comp['date'] = request.form.get('date', comp['date']).strip()
         comp['numberOfPlaces'] = places
+        comp['registration_open'] = (
+            request.form.get('registration_open') != 'off'
+        )
         saveCompetitions()
         flash(f"Compétition '{comp['name']}' mise à jour.")
         return redirect(url_for('adminCompetitions'))
@@ -354,6 +457,24 @@ def adminEditCompetition(comp_name):
         comp=comp,
         admin_name=session.get('admin_name')
     )
+
+
+@app.route(
+    '/admin/competitions/<comp_name>/toggle-registration',
+    methods=['POST']
+)
+@admin_required
+def adminToggleCompetitionRegistration(comp_name):
+    comp = next((c for c in competitions if c['name'] == comp_name), None)
+    if not comp:
+        flash("Compétition introuvable.")
+        return redirect(url_for('adminCompetitions'))
+
+    comp['registration_open'] = not comp.get('registration_open', True)
+    saveCompetitions()
+    state = 'ouvertes' if comp['registration_open'] else 'fermées'
+    flash(f"Inscriptions {state} pour la compétition '{comp_name}'.")
+    return redirect(url_for('adminCompetitions'))
 
 
 @app.route('/admin/competitions/add', methods=['GET', 'POST'])
@@ -371,7 +492,14 @@ def adminAddCompetition():
             flash("Nom et date requis.")
             return redirect(url_for('adminAddCompetition'))
         competitions.append(
-            {'name': name, 'date': date, 'numberOfPlaces': places}
+            {
+                'name': name,
+                'date': date,
+                'numberOfPlaces': places,
+                'registration_open': (
+                    request.form.get('registration_open') != 'off'
+                ),
+            }
         )
         saveCompetitions()
         flash(f"Compétition '{name}' ajoutée.")

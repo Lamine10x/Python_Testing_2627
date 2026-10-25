@@ -23,10 +23,12 @@
     <div class="input-group">
       <label for="points">Points disponibles</label>
       <input type="number" id="points" name="points" value="{{ club['points'] }}" min="0" step="1" required />
+      <span class="input-hint">Pour créditer ou débiter des points avec un motif, utilisez la gestion des points.</span>
     </div>
 
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Enregistrer</button>
+      <a href="{{ url_for('adminClubPoints', club_name=club['name']) }}" class="btn btn-secondary">Gérer les points</a>
       <a href="{{ url_for('adminClubs') }}" class="btn btn-ghost">Annuler</a>
     </div>
   </form>

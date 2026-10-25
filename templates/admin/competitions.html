@@ -20,16 +20,30 @@
         <th>Nom</th>
         <th>Date</th>
         <th>Places</th>
+        <th>Inscriptions</th>
         <th style="text-align:right;">Actions</th>
       </tr>
     </thead>
     <tbody>
       {% for comp in competitions %}
+      {% set is_open = comp.get('registration_open', True) %}
       <tr>
         <td class="name-col">{{ comp['name'] }}</td>
         <td>{{ comp['date'] }}</td>
         <td><span class="badge badge-default">{{ comp['numberOfPlaces'] }} places</span></td>
+        <td>
+          {% if is_open %}
+          <span class="badge badge-success">Ouvertes</span>
+          {% else %}
+          <span class="badge badge-danger">Fermées</span>
+          {% endif %}
+        </td>
         <td class="actions">
+          <form class="inline-form" action="{{ url_for('adminToggleCompetitionRegistration', comp_name=comp['name']) }}" method="post" onsubmit="return confirm('{{ 'Fermer' if is_open else 'Ouvrir' }} les inscriptions ?');">
+            <button type="submit" class="btn {% if is_open %}btn-secondary{% else %}btn-primary{% endif %} btn-sm">
+              {% if is_open %}Fermer{% else %}Ouvrir{% endif %}
+            </button>
+          </form>
           <a href="{{ url_for('adminEditCompetition', comp_name=comp['name']) }}" class="btn btn-secondary btn-sm">Modifier</a>
           <form class="inline-form" action="{{ url_for('adminDeleteCompetition', comp_name=comp['name']) }}" method="post" onsubmit="return confirm('Supprimer cette compétition ?');">
             <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
