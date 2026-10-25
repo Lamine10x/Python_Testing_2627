@@ -40,7 +40,7 @@ def test_reservation_cumulee_superieure_a_12_places_refusee(client):
         'club': club['name'],
         'competition': competition['name'],
         'places': '8'
-    })
+    }, follow_redirects=True)
     assert response_1.status_code == 200
 
     points_apres_premiere = int(club['points'])

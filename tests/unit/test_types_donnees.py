@@ -39,7 +39,7 @@ def test_reservation_maintient_types_entiers(client):
         'club': club['name'],
         'competition': competition['name'],
         'places': '1'
-    })
+    }, follow_redirects=True)
 
     assert response.status_code == 200
     assert isinstance(club['points'], int)

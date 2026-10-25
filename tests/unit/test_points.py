@@ -18,14 +18,14 @@ def test_deduction_points_apres_reservation(client):
         'club': club['name'],
         'competition': competition['name'],
         'places': str(places_a_reserver)
-    })
+    }, follow_redirects=True)
 
     assert response.status_code == 200
     assert int(club['points']) == points_initiaux - places_a_reserver
     assert int(competition['numberOfPlaces']) == (
         places_initiales - places_a_reserver
     )
-    assert b"Great-booking complete!" in response.data
+    assert "Réservation confirmée" in response.get_data(as_text=True)
 
 
 def test_reservation_enregistre_places_et_donnees(client, monkeypatch):
@@ -44,7 +44,7 @@ def test_reservation_enregistre_places_et_donnees(client, monkeypatch):
         'club': club['name'],
         'competition': competition['name'],
         'places': '3',
-    })
+    }, follow_redirects=True)
 
     assert response.status_code == 200
     assert club['booked'][competition['name']] == 3

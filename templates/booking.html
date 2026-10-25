@@ -19,7 +19,7 @@
 
     .book-card {
       width: 100%;
-      max-width: 440px;
+      max-width: 500px;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
@@ -58,14 +58,14 @@
     .book-sub {
       font-size: 0.85rem;
       color: var(--text-muted);
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
 
     .info-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin-bottom: 28px;
+      margin-bottom: 20px;
     }
 
     .info-cell {
@@ -92,6 +92,51 @@
       letter-spacing: -0.02em;
     }
 
+    .booking-summary {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 20px;
+    }
+
+    .summary-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-subtle);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .summary-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 4px 0;
+      font-size: 0.84rem;
+      color: var(--text-muted);
+    }
+
+    .summary-row strong {
+      color: var(--text);
+      font-weight: 600;
+      text-align: right;
+    }
+
+    .summary-row .summary-negative { color: var(--danger); }
+
+    .summary-warning {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      background: var(--danger-bg);
+      border: 1px solid var(--danger-border);
+      color: var(--danger);
+      font-size: 0.78rem;
+    }
+
     .book-form {
       display: flex;
       flex-direction: column;
@@ -101,6 +146,11 @@
     .book-divider {
       border: none;
       border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 560px) {
+      .book-card { padding: 26px 20px; }
+      .info-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -119,13 +169,23 @@
   <div class="page-wrapper">
     <div class="book-wrapper">
       <div class="book-card">
-        <a href="javascript:history.back()" class="back-link">
+        <a href="{{ url_for('clubDashboard', club_name=club['name']) }}" class="back-link">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
           Retour au tableau de bord
         </a>
 
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <ul class="flash-list" style="margin-bottom:18px;">
+          {% for category, message in messages %}
+          <li class="flash-{{ category if category in ['success', 'error', 'info'] else 'info' }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
+
         <h1 class="book-title">{{ competition['name'] }}</h1>
-        <p class="book-sub">Confirmez votre réservation de places</p>
+        <p class="book-sub">Confirmez votre réservation — {{ competition['date']|datefr }}</p>
 
         <div class="info-grid">
           <div class="info-cell">
@@ -136,9 +196,38 @@
             <div class="info-cell-label">Vos points</div>
             <div class="info-cell-value">{{ club['points'] }}</div>
           </div>
+          <div class="info-cell">
+            <div class="info-cell-label">Déjà réservées</div>
+            <div class="info-cell-value">{{ already_booked }}/12</div>
+          </div>
+          <div class="info-cell">
+            <div class="info-cell-label">Maximum réservable</div>
+            <div class="info-cell-value">{{ max_bookable }}</div>
+          </div>
         </div>
 
-        <hr class="book-divider" style="margin-bottom:24px;">
+        <div class="booking-summary" aria-live="polite">
+          <div class="summary-title">Récapitulatif</div>
+          <div class="summary-row">
+            <span>Places demandées</span>
+            <strong id="summary-places">—</strong>
+          </div>
+          <div class="summary-row">
+            <span>Coût de la réservation</span>
+            <strong id="summary-cost">—</strong>
+          </div>
+          <div class="summary-row">
+            <span>Solde après réservation</span>
+            <strong id="summary-balance">{{ club['points'] }} point(s)</strong>
+          </div>
+          <div class="summary-row">
+            <span>Quota après réservation</span>
+            <strong id="summary-quota">{{ already_booked }}/12</strong>
+          </div>
+          <p class="summary-warning" id="summary-warning" hidden></p>
+        </div>
+
+        <hr class="book-divider" style="margin-bottom:20px;">
 
         <form class="book-form" action="{{ url_for('purchasePlaces') }}" method="post" id="booking-form">
           <input type="hidden" name="club" value="{{ club['name'] }}">
@@ -151,11 +240,15 @@
               name="places"
               id="places"
               min="1"
-              max="12"
-              placeholder="Entre 1 et 12"
+              max="{{ max_bookable }}"
+              value="{{ form_places }}"
+              placeholder="Entre 1 et {{ max_bookable }}"
+              aria-describedby="places-hint"
               required
             />
-            <span class="input-hint">1 place = 1 point · Max. 12 places par club par compétition</span>
+            <span class="input-hint" id="places-hint">
+              1 place = 1 point · Vous pouvez réserver jusqu'à {{ max_bookable }} place(s) sur cette compétition.
+            </span>
           </div>
 
           <button type="submit" class="btn btn-primary btn-lg btn-block" id="btn-confirm">
@@ -166,5 +259,60 @@
       </div>
     </div>
   </div>
+
+  <script>
+    (function () {
+      const input = document.getElementById('places');
+      const summaryPlaces = document.getElementById('summary-places');
+      const summaryCost = document.getElementById('summary-cost');
+      const summaryBalance = document.getElementById('summary-balance');
+      const summaryQuota = document.getElementById('summary-quota');
+      const summaryWarning = document.getElementById('summary-warning');
+
+      const points = {{ club['points']|tojson }};
+      const alreadyBooked = {{ already_booked|tojson }};
+      const maxBookable = {{ max_bookable|tojson }};
+
+      if (!input) {
+        return;
+      }
+
+      function updateSummary() {
+        const requested = Number.parseInt(input.value, 10);
+
+        if (!Number.isFinite(requested) || requested < 1) {
+          summaryPlaces.textContent = '—';
+          summaryCost.textContent = '—';
+          summaryBalance.textContent = points + ' point(s)';
+          summaryBalance.classList.remove('summary-negative');
+          summaryQuota.textContent = alreadyBooked + '/12';
+          summaryWarning.hidden = true;
+          return;
+        }
+
+        const balance = points - requested;
+        const totalQuota = alreadyBooked + requested;
+
+        summaryPlaces.textContent = requested;
+        summaryCost.textContent = requested + ' point(s)';
+        summaryBalance.textContent = balance + ' point(s)';
+        summaryBalance.classList.toggle('summary-negative', balance < 0);
+        summaryQuota.textContent = totalQuota + '/12';
+
+        if (requested > maxBookable) {
+          summaryWarning.textContent =
+            'Le maximum réservable pour cette compétition est de ' +
+            maxBookable + ' place(s).';
+          summaryWarning.hidden = false;
+        } else {
+          summaryWarning.hidden = true;
+        }
+      }
+
+      input.addEventListener('input', updateSummary);
+      input.addEventListener('change', updateSummary);
+      updateSummary();
+    })();
+  </script>
 </body>
 </html>

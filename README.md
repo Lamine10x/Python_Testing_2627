@@ -4,7 +4,8 @@ Application Flask de démonstration pour la gestion des réservations de places
 de compétitions par les clubs de powerlifting.
 
 Le projet couvre les correctifs de la Phase 1, le tableau public des points
-(Phase 2) et une interface d'administration complète, y compris la gestion
+(Phase 2), un espace club enrichi (réservations, quota et historique des
+points) et une interface d'administration complète, y compris la gestion
 des points des clubs et l'ouverture ou la fermeture des inscriptions aux
 compétitions.
 
@@ -58,6 +59,40 @@ compétitions.
 - Liens vers le classement depuis la page d'accueil et le tableau de bord club.
 - Les réservations sont enregistrées dans le champ `booked` de chaque club,
   ce qui permet de conserver le classement par compétition après redémarrage.
+
+### Espace club — réservations et points
+
+- Tableau de bord club avec quatre indicateurs : points disponibles,
+  compétitions, inscriptions ouvertes et places réservées.
+- Section « Mes réservations » :
+  - compétitions déjà réservées par le club ;
+  - nombre de places réservées ;
+  - points engagés ;
+  - quota restant sur les 12 places autorisées ;
+  - statut de la réservation : confirmée, terminée ou inscriptions fermées.
+- Affichage du quota restant et du nombre de places déjà réservées sur
+  chaque carte de compétition.
+- Calcul du maximum réservable à partir de trois contraintes :
+  - quota restant du club pour la compétition ;
+  - places encore disponibles dans la compétition ;
+  - solde de points du club.
+- Formulaire de réservation enrichi :
+  - rappel des places disponibles, du solde de points, des places déjà
+    réservées et du maximum réservable ;
+  - attribut `max` aligné sur le maximum réellement réservable ;
+  - récapitulatif dynamique du coût, du solde après réservation et du quota
+    après réservation ;
+  - conservation de la saisie lorsqu'une erreur de validation est détectée.
+- Redirection Post/Redirect/Get (HTTP 303) après une réservation réussie,
+  avec message de confirmation et retour sur la section « Mes réservations ».
+- Historique des points côté club :
+  - affichage des dix derniers mouvements ;
+  - distinction entre réservation et ajustement administrateur ;
+  - date, motif, variation et solde après opération ;
+  - enregistrement automatique du débit de points lors d'une réservation.
+- Messages flash différenciés : succès, erreur et information.
+- Route `GET /dashboard/<club>` utilisée comme cible de la redirection après
+  réservation.
 
 ### Interface d'administration
 
@@ -113,6 +148,10 @@ Il présente :
 - les résultats de qualité, performance et sécurité ;
 - les limites, les améliorations et les annexes (routes, données, tests,
   commandes, glossaire, comptes de démonstration).
+
+Le PDF documente la livraison précédente. Les lots 2 à 4 de l'espace club
+(réservations, quota, récapitulatif et historique des points) sont détaillés
+dans la section [Espace club — réservations et points](#espace-club--réservations-et-points).
 
 ## Technologies
 
@@ -217,7 +256,7 @@ Le rapport HTML est disponible dans `htmlcov/index.html`.
 ### Résultat actuel
 
 ```text
-94 tests passent
+108 tests passent
 Couverture de server.py : 100 %
 ```
 
@@ -358,6 +397,7 @@ dans `main` :
 | --- | --- | --- |
 | `main` | dernier commit | Branche de livraison |
 | `QA` | = `main` | Miroir de `main` pour la revue finale |
+| `feature/espace-club-reservations-historique` | — | Mergée |
 | `docs/pdf-documentation-fonctionnalites-bugs` | — | Mergée |
 | `feature/gestion-points-et-inscriptions` | `06cd9b0` | Mergée |
 | `feature/classement-public-par-competition` | `8e5f975` | Mergée |
@@ -368,6 +408,10 @@ dans `main` :
 Historique récent :
 
 ```text
+*   Merge : espace club reservations et historique
+|\
+| * Feature : mes reservations quota et historique des points
+|/
 *   Merge : documentation PDF fonctionnalites et bugs
 |\
 | * Docs : ajout du PDF de documentation
