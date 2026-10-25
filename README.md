@@ -1,81 +1,248 @@
-# Intro
+# GUDLFT — Plateforme de réservation de compétitions
+
+Application Flask de démonstration pour la gestion des réservations de places
+de compétitions par les clubs de powerlifting.
+
+Le projet couvre les correctifs de la Phase 1, le tableau public des points
+(Phase 2) et une interface d'administration complète.
+
+## Sommaire
+
+- [Fonctionnalités](#fonctionnalités)
+- [Technologies](#technologies)
+- [Installation](#installation)
+- [Lancement](#lancement)
+- [Comptes de test](#comptes-de-test)
+- [Tests unitaires](#tests-unitaires)
+- [Rapport Flake8](#rapport-flake8)
+- [Tests de performance](#tests-de-performance)
+- [Structure du projet](#structure-du-projet)
+
+## Fonctionnalités
+
+### Phase 1 — Correctifs
+
+- Gestion propre des emails inconnus lors de la connexion (HTTP 401).
+- Gestion des clubs et compétitions inconnus (HTTP 404).
+- Blocage des réservations pour une compétition déjà passée.
+- Validation des places saisies : nombre positif et entier.
+- Limite stricte de 12 places par club et par compétition, réservations
+  cumulées incluses.
+- Blocage des réservations si les points du club sont insuffisants.
+- Blocage de la surréservation par rapport aux places restantes.
+- Déduction correcte des points du club après réservation.
+- Harmonisation des types numériques lus depuis les fichiers JSON.
+- Correction des balises HTML invalides et des formulaires.
+- Nettoyage complet de la session à la déconnexion avec message de confirmation.
+- Mise en conformité PEP8 et correction des alertes Flake8.
+
+### Phase 2 — Tableau public des points
+
+- Page publique accessible sans connexion :
+  - `/displayBoard`
+  - alias `/points`
+- Affichage de tous les clubs et de leurs points.
+- Classement avec mise en avant des trois premiers clubs.
+- Liens vers le classement depuis la page d'accueil et le tableau de bord club.
+
+### Interface d'administration
+
+- Connexion et déconnexion administrateur protégées par session.
+- Tableau de bord avec statistiques :
+  - nombre de clubs ;
+  - nombre de compétitions ;
+  - total des points.
+- Gestion complète des clubs :
+  - liste ;
+  - ajout ;
+  - modification ;
+  - suppression.
+- Gestion complète des compétitions :
+  - liste ;
+  - ajout ;
+  - modification ;
+  - suppression.
+- Templates dédiés dans `templates/admin/`.
+- Identifiants stockés dans `admin.json`.
+
+## Technologies
+
+- Python 3.x
+- Flask 1.1.2
+- Jinja2
+- pytest et pytest-cov
+- Flake8
+- Locust
+- Fichiers JSON comme base de données légère
+
+## Installation
+
+Depuis PowerShell, à la racine du projet :
+
+```powershell
+python -m venv env
+.\env\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
-Hey,
 
-Je viens de recevoir le rapport de QA pour la phase 1 du projet. Il y a plusieurs bogues, dont un qui fait planter l'application ! 
-Malheureusement, je ne suis pas au bureau pour les prochains jours (un de mes enfants est tombé malade ce week-end). 
-Je ne sais pas encore quand je pourrai être là dans la semaine. Pourriez-vous prendre en charge la mise en œuvre du projet ? 
-Vous devrez régler les bogues de la phase 1 et mettre en œuvre les éléments de la phase 2 (j'ai ajouté le travail de la phase 2 et les bogues de la section “issues” du repo). 
+Sous cmd.exe, l'activation se fait avec :
 
-Vous devrez cloner et forker le repo et le mettre en place sur votre machine locale (tout ce dont vous avez besoin se trouve dans le fichier README). 
-Ensuite, passez en revue les bogues dans la section des problèmes, puis essayez de reproduire les problèmes sur votre machine locale pour résoudre les bogues et ajouter la gestion des erreurs. 
-Pour gagner du temps de configuration, nous utilisons Flask et JSON pour éviter d'utiliser une base de données. 
-La plupart des outils dont vous aurez besoin se trouvent dans le fichier requirements.txt dans le repo, 
-mais vous devrez installer Flask et notre framework de test préféré, pytest, ainsi que notre outil de test de performance, Locust. 
-
-Vous devrez également préparer un rapport de test et un rapport de performances, 
-conformément au guide de développement à la fin des spécifications fonctionnelles ci-jointes. 
-Veillez à suivre toutes les directives, car le QA nous reproche de ne pas respecter les normes. 
-Vous devez tester de manière approfondie les résultats requis (à la fois les happy paths et les sad paths) pour toutes les fonctionnalités de l'application.  
-Je vous encourage également à adopter une approche de TDD, car cela vous aidera à rationaliser votre travail. 
-
-Une fois que vous aurez terminé, nous ferons un examen de ce que vous avez dans la branche QA du code. 
-Nous examinerons les rapports et la manière dont vous avez résolu les problèmes, 
-nous examinerons votre code et nous testerons la couverture de la nouvelle fonctionnalité. 
-
-Merci !
-
+```bat
+env\Scripts\activate.bat
 ```
-1. Why
 
+Sous Linux ou macOS :
 
-    This is a proof of concept (POC) project to show a light-weight version of our competition booking platform. The aim is the keep things as light as possible, and use feedback from the users to iterate.
+```bash
+source env/bin/activate
+```
 
-2. Getting Started
+## Lancement
 
-    This project uses the following technologies:
+Toujours depuis la racine du projet, avec l'environnement virtuel activé :
 
-    * Python v3.x+
+```powershell
+$env:FLASK_APP = "server"
+$env:FLASK_ENV = "development"
+flask run
+```
 
-    * [Flask](https://flask.palletsprojects.com/en/1.1.x/)
+Version en une seule ligne :
 
-        Whereas Django does a lot of things for us out of the box, Flask allows us to add only what we need. 
-     
+```powershell
+$env:FLASK_APP="server"; $env:FLASK_ENV="development"; flask run
+```
 
-    * [Virtual environment](https://virtualenv.pypa.io/en/stable/installation.html)
+Adresses utiles :
 
-        This ensures you'll be able to install the correct packages without interfering with Python on your machine.
+- Application club : <http://127.0.0.1:5000>
+- Classement public : <http://127.0.0.1:5000/displayBoard>
+- Administration : <http://127.0.0.1:5000/admin/login>
 
-        Before you begin, please ensure you have this installed globally. 
+Les variables d'environnement sont valables uniquement pour la session
+PowerShell en cours.
 
+## Comptes de test
 
-3. Installation
+### Clubs
 
-    - After cloning, change into the directory and type <code>virtualenv .</code>. This will then set up a a virtual python environment within that directory.
+| Email | Club |
+| --- | --- |
+| `john@simplylift.co` | Simply Lift |
+| `admin@irontemple.com` | Iron Temple |
+| `kate@shelifts.co.uk` | She Lifts |
 
-    - Next, type <code>source bin/activate</code>. You should see that your command prompt has changed to the name of the folder. This means that you can install packages in here without affecting affecting files outside. To deactivate, type <code>deactivate</code>
+### Administration
 
-    - Rather than hunting around for the packages you need, you can install in one step. Type <code>pip install -r requirements.txt</code>. This will install all the packages listed in the respective file. If you install a package, make sure others know by updating the requirements.txt file. An easy way to do this is <code>pip freeze > requirements.txt</code>
+| Champ | Valeur |
+| --- | --- |
+| Email | `admin@gudlft.com` |
+| Mot de passe | `admin1234` |
+| URL | <http://127.0.0.1:5000/admin/login> |
 
-    - Flask requires that you set an environmental variable to the python file. However you do that, you'll want to set the file to be <code>server.py</code>. Check [here](https://flask.palletsprojects.com/en/1.1.x/quickstart/#a-minimal-application) for more details
+Les identifiants administrateur peuvent être modifiés dans `admin.json`.
+Pensez à changer le mot de passe par défaut avant tout déploiement réel.
 
-    - You should now be ready to test the application. In the directory, type either <code>flask run</code> or <code>python -m flask run</code>. The app should respond with an address you should be able to go to using your browser.
+## Tests unitaires
 
-4. Current Setup
+Lancer tous les tests :
 
-    The app is powered by [JSON files](https://www.tutorialspoint.com/json/json_quick_guide.htm). This is to get around having a DB until we actually need one. The main ones are:
-     
-    * competitions.json - list of competitions
-    * clubs.json - list of clubs with relevant information. You can look here to see what email addresses the app will accept for login.
+```powershell
+pytest tests/
+```
 
-5. Testing
+Lancer les tests avec le rapport de couverture :
 
-    You are free to use whatever testing framework you like-the main thing is that you can show what tests you are using.
+```powershell
+pytest --cov=server tests/
+```
 
-    We also like to show how well we're testing, so there's a module called 
-    [coverage](https://coverage.readthedocs.io/en/coverage-5.1/) you should add to your project.
-   
- 6. Flake8 Report 
-    
+Générer un rapport HTML de couverture :
 
+```powershell
+pytest --cov=server --cov-report=html tests/
+```
 
+Le rapport HTML est disponible dans `htmlcov/index.html`.
+
+### Résultat actuel
+
+```text
+66 tests passent
+Couverture de server.py : 100 %
+```
+
+## Rapport Flake8
+
+Commande utilisée :
+
+```powershell
+flake8 server.py tests/ locustfile.py --count --statistics --show-source
+```
+
+Résultat :
+
+```text
+Version Flake8 : 7.4.1
+Fichiers analysés : server.py, tests/, locustfile.py
+Nombre d'erreurs : 0
+```
+
+Aucune erreur PEP8 / Flake8 n'a été détectée.
+
+## Tests de performance
+
+L'application Flask doit être lancée avant de démarrer Locust.
+
+Lancer Locust avec l'interface web :
+
+```powershell
+locust -f locustfile.py --host http://127.0.0.1:5000
+```
+
+Puis ouvrir <http://localhost:8089> et renseigner :
+
+- 6 utilisateurs ;
+- taux d'apparition : 1 utilisateur/seconde.
+
+Lancer un test sans interface graphique :
+
+```powershell
+locust -f locustfile.py --headless -u 6 -r 1 -t 30s --host http://127.0.0.1:5000
+```
+
+Le scénario simule la consultation de l'accueil, la connexion d'un club,
+le classement public, le formulaire de réservation et les routes admin.
+
+### Dernier test de fumée
+
+```text
+6 utilisateurs
+24 requêtes
+0 échec
+```
+
+## Structure du projet
+
+```text
+.
+├── server.py                 # Application Flask et routes
+├── clubs.json                # Clubs et points
+├── competitions.json         # Compétitions et places
+├── admin.json                # Comptes administrateur
+├── locustfile.py             # Scénario de test de performance
+├── requirements.txt          # Dépendances Python
+├── LANCEMENT.txt             # Aide-mémoire des commandes
+├── static/
+│   └── css/
+│       └── style.css         # Styles de l'application
+├── templates/
+│   ├── index.html
+│   ├── welcome.html
+│   ├── booking.html
+│   ├── display_board.html
+│   └── admin/                # Templates d'administration
+└── tests/
+    ├── conftest.py
+    └── unit/                 # Tests unitaires
+```
