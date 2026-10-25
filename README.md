@@ -16,6 +16,8 @@ Le projet couvre les correctifs de la Phase 1, le tableau public des points
 - [Tests unitaires](#tests-unitaires)
 - [Rapport Flake8](#rapport-flake8)
 - [Tests de performance](#tests-de-performance)
+- [Ressources](#ressources)
+- [Conventions Git](#conventions-git)
 - [Structure du projet](#structure-du-projet)
 
 ## Fonctionnalités
@@ -242,6 +244,23 @@ Les seuils du cahier des charges sont respectés :
 
 - liste des compétitions : moins de 5 secondes ;
 - mise à jour des points : moins de 2 secondes.
+
+## Ressources
+
+- Dépôt GitHub : <https://github.com/Lamine10x/Python_Testing_2627>
+- Documentation Flask : <https://flask.palletsprojects.com/>
+- Documentation pytest : <https://docs.pytest.org/>
+- Documentation Flake8 : <https://flake8.pycqa.org/>
+- Documentation Locust : <https://docs.locust.io/>
+
+## Conventions Git
+
+- Branche principale : `main`.
+- Branches de travail : `<type>/nom-descriptif`, par exemple
+  `bug/correction-reservation` ou `feature/tableau-public`.
+- Types utilisés : `bug/`, `feature/` et `improvement/`.
+- Une branche porte un seul correctif ou une seule fonctionnalité.
+- La branche `QA` sert à la revue finale et n'est pas fusionnée dans `main`.
 
 ## Structure du projet
 
