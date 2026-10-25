@@ -1,0 +1,151 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Annuler une réservation | GUDLFT Admin{% endblock %}
+{% block page_title %}Annulation et remboursement{% endblock %}
+
+{% block content %}
+<style>
+  .cancel-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.3fr);
+    gap: 20px;
+    align-items: start;
+  }
+
+  .cancel-card { max-width: none; }
+
+  .cancel-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .cancel-summary-cell {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+  }
+
+  .cancel-summary-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .cancel-summary-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .cancel-note {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  @media (max-width: 900px) {
+    .cancel-layout { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 560px) {
+    .cancel-summary { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="cancel-layout">
+  <div class="form-card cancel-card">
+    <div class="cancel-summary">
+      <div class="cancel-summary-cell">
+        <div class="cancel-summary-label">Places réservées</div>
+        <div class="cancel-summary-value">{{ booked }}</div>
+      </div>
+      <div class="cancel-summary-cell">
+        <div class="cancel-summary-label">Remboursement max.</div>
+        <div class="cancel-summary-value">{{ booked }} pts</div>
+      </div>
+      <div class="cancel-summary-cell">
+        <div class="cancel-summary-label">Solde du club</div>
+        <div class="cancel-summary-value">{{ club['points'] }} pts</div>
+      </div>
+      <div class="cancel-summary-cell">
+        <div class="cancel-summary-label">Statut</div>
+        <span class="badge {{ status_info.status_class }}">{{ status_info.status }}</span>
+      </div>
+    </div>
+
+    <p class="form-intro">
+      Club « {{ club['name'] }} » — compétition « {{ competition['name'] }} »
+      du {{ competition['date']|datefr }}. L'annulation rembourse 1 point par
+      place et remet les places à disposition des autres clubs.
+    </p>
+
+    <form action="{{ url_for('adminCancelReservation', club_name=club['name'], comp_name=competition['name']) }}" method="post" id="form-cancel-reservation">
+      <div class="input-group">
+        <label for="cancel-places">Nombre de places à annuler</label>
+        <input
+          type="number"
+          id="cancel-places"
+          name="places"
+          min="1"
+          max="{{ booked }}"
+          value="{{ form_places }}"
+          placeholder="Entre 1 et {{ booked }}"
+          aria-describedby="cancel-places-hint"
+          required
+        />
+        <span class="input-hint" id="cancel-places-hint">
+          Maximum {{ booked }} place(s) pour cette réservation. Les places non annulées restent réservées.
+        </span>
+      </div>
+
+      <div class="input-group">
+        <label for="cancel-reason">Motif</label>
+        <input
+          type="text"
+          id="cancel-reason"
+          name="reason"
+          maxlength="160"
+          value="{{ form_reason }}"
+          placeholder="Ex. blessure, demande du club, correction..."
+          aria-describedby="cancel-reason-hint"
+        />
+        <span class="input-hint" id="cancel-reason-hint">
+          Facultatif. Par défaut : « Annulation administrateur ». Le motif apparaît dans l'historique et l'audit.
+        </span>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-danger">Confirmer l'annulation</button>
+        <a href="{{ url_for('adminReservations') }}" class="btn btn-ghost">Annuler et revenir</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="admin-card">
+    <div class="admin-toolbar" style="margin-bottom:14px;">
+      <h2 class="admin-section-title" style="margin:0;">Effet de l'opération</h2>
+    </div>
+    <p class="cancel-note">
+      Les places annulées sont immédiatement ajoutées aux places disponibles
+      de la compétition. Elles apparaissent aussi dans le bloc « Places
+      libérées récemment » du tableau de bord des autres clubs.
+    </p>
+    <p class="cancel-note" style="margin-top:10px;">
+      Le remboursement est enregistré dans l'historique des points du club avec
+      le type « Remboursement », puis dans le journal d'audit global avec
+      l'administrateur, le motif et le nombre de places.
+    </p>
+    <p class="cancel-note" style="margin-top:10px;">
+      Cette action est irréversible : pour re-réserver les places, le club devra
+      repasser par le formulaire de réservation.
+    </p>
+  </div>
+</div>
+{% endblock %}

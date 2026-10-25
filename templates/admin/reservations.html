@@ -1,0 +1,159 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Gestion des réservations | GUDLFT Admin{% endblock %}
+{% block page_title %}Gestion des réservations{% endblock %}
+
+{% block content %}
+<style>
+  .admin-filter-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+
+  .admin-filter-row {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .admin-filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 180px;
+  }
+
+  .admin-filter-field label {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
+  }
+
+  .admin-filter-field select {
+    background: var(--surface);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    color: var(--text);
+    font-size: 0.85rem;
+    font-family: inherit;
+  }
+
+  .admin-filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 1px;
+  }
+
+  .reservation-points {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  @media (max-width: 640px) {
+    .admin-filter-field { width: 100%; }
+    .admin-filter-actions { width: 100%; }
+  }
+</style>
+
+<div class="admin-stats">
+  <div class="admin-stat">
+    <div class="admin-stat-label">Réservations actives</div>
+    <div class="admin-stat-value">{{ reservation_stats.reservations }}</div>
+  </div>
+  <div class="admin-stat">
+    <div class="admin-stat-label">Places réservées</div>
+    <div class="admin-stat-value">{{ reservation_stats.places }}</div>
+  </div>
+  <div class="admin-stat">
+    <div class="admin-stat-label">Points remboursables</div>
+    <div class="admin-stat-value">{{ reservation_stats.points }}</div>
+  </div>
+</div>
+
+<div class="admin-toolbar">
+  <h2 class="admin-section-title">Réservations par club et compétition</h2>
+  <a href="{{ url_for('adminDashboard') }}" class="btn btn-ghost btn-sm">Retour au tableau de bord</a>
+</div>
+
+<form class="admin-filter-form" method="get" action="{{ url_for('adminReservations') }}" aria-label="Filtrer les réservations">
+  <div class="admin-filter-row">
+    <div class="admin-filter-field">
+      <label for="filter-club">Club</label>
+      <select id="filter-club" name="club">
+        <option value="">Tous les clubs</option>
+        {% for club_name in club_options %}
+        <option value="{{ club_name }}" {% if reservation_filters.club == club_name %}selected{% endif %}>{{ club_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="admin-filter-field">
+      <label for="filter-competition">Compétition</label>
+      <select id="filter-competition" name="competition">
+        <option value="">Toutes les compétitions</option>
+        {% for competition_name in competition_options %}
+        <option value="{{ competition_name }}" {% if reservation_filters.competition == competition_name %}selected{% endif %}>{{ competition_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="admin-filter-field">
+      <label for="filter-statut">Statut</label>
+      <select id="filter-statut" name="statut">
+        <option value="">Tous les statuts</option>
+        {% for value, label in status_options %}
+        <option value="{{ value }}" {% if reservation_filters.statut == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="admin-filter-actions">
+      <button type="submit" class="btn btn-primary btn-sm">Filtrer</button>
+      <a href="{{ url_for('adminReservations') }}" class="btn btn-ghost btn-sm">Réinitialiser</a>
+    </div>
+  </div>
+</form>
+
+<div class="admin-card">
+  {% if reservations %}
+  <table class="admin-table" id="admin-reservations-table">
+    <caption class="sr-only">Réservations actives par club et compétition</caption>
+    <thead>
+      <tr>
+        <th scope="col">Club</th>
+        <th scope="col">Compétition</th>
+        <th scope="col">Date</th>
+        <th scope="col">Statut</th>
+        <th scope="col">Places</th>
+        <th scope="col">Remboursable</th>
+        <th scope="col" style="text-align:right;">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for reservation in reservations %}
+      <tr>
+        <td class="name-col">{{ reservation.club['name'] }}</td>
+        <td>{{ reservation.competition['name'] }}</td>
+        <td>{{ reservation.competition['date']|datefr }}</td>
+        <td><span class="badge {{ reservation.status_class }}">{{ reservation.status }}</span></td>
+        <td>{{ reservation.booked }}</td>
+        <td class="reservation-points">{{ reservation.points_refundable }} pts</td>
+        <td class="actions">
+          <a href="{{ url_for('adminCancelReservation', club_name=reservation.club['name'], comp_name=reservation.competition['name']) }}" class="btn btn-danger btn-sm">
+            Annuler / rembourser
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="admin-empty">Aucune réservation ne correspond aux filtres sélectionnés.</p>
+  {% endif %}
+</div>
+{% endblock %}

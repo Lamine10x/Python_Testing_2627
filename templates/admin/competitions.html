@@ -7,7 +7,7 @@
 <div class="admin-toolbar">
   <h2 class="admin-section-title">Liste des compétitions ({{ competitions|length }})</h2>
   <a href="{{ url_for('adminAddCompetition') }}" class="btn btn-primary btn-sm">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     Ajouter une compétition
   </a>
 </div>
@@ -15,13 +15,14 @@
 <div class="admin-card">
   {% if competitions %}
   <table class="admin-table" id="competitions-admin-table">
+    <caption class="sr-only">Liste des compétitions, places et état des inscriptions</caption>
     <thead>
       <tr>
-        <th>Nom</th>
-        <th>Date</th>
-        <th>Places</th>
-        <th>Inscriptions</th>
-        <th style="text-align:right;">Actions</th>
+        <th scope="col">Nom</th>
+        <th scope="col">Date</th>
+        <th scope="col">Places</th>
+        <th scope="col">Inscriptions</th>
+        <th scope="col" style="text-align:right;">Actions</th>
       </tr>
     </thead>
     <tbody>

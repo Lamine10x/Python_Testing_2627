@@ -18,6 +18,7 @@ def prevent_disk_writes(monkeypatch):
     """Evite d'ecrire dans les fichiers JSON pendant les tests."""
     monkeypatch.setattr(server, 'saveClubs', lambda: None)
     monkeypatch.setattr(server, 'saveCompetitions', lambda: None)
+    monkeypatch.setattr(server, 'saveAuditLog', lambda: None)
 
 
 def login_admin(client, email=ADMIN_EMAIL, password=ADMIN_PASSWORD):
