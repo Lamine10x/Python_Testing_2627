@@ -417,7 +417,10 @@ dans `main` :
 | --- | --- | --- |
 | `main` | dernier commit | Branche de livraison |
 | `QA` | = `main` | Miroir de `main` pour la revue finale |
+| `feature/admin-reservations-et-audit` | `89b7424` | Mergée (`a920309`) |
+| `feature/espace-club-p2` | `775f58e` | Mergée (`7f05d3a`) |
 | `feature/espace-club-reservations-historique` | `1302182` | Mergée |
+| `docs/etat-branches-lot-admin` | — | Mergée |
 | `docs/retrait-reference-pdf-supprime` | — | Mergée |
 | `docs/pdf-documentation-fonctionnalites-bugs` | — | Mergée |
 | `feature/gestion-points-et-inscriptions` | `06cd9b0` | Mergée |
@@ -429,6 +432,14 @@ dans `main` :
 Historique récent :
 
 ```text
+*   Merge : reservations admin annulation remboursement et audit global
+|\
+| * Feature : reservations admin annulation remboursement et audit global
+|/
+*   Merge : espace club filtres accessibilite et dashboard enrichi
+|\
+| * Feature : filtres accessibilite et tableau de bord club enrichi
+|/
 *   Merge : retrait reference PDF supprime
 |\
 | * Docs : retrait reference PDF supprime
