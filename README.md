@@ -276,7 +276,7 @@ Le rapport HTML est disponible dans `htmlcov/index.html`.
 ### Résultat actuel
 
 ```text
-135 tests passent
+136 tests passent
 Couverture de server.py : 100 %
 ```
 
@@ -415,8 +415,9 @@ dans `main` :
 
 | Branche | Commit | État |
 | --- | --- | --- |
-| `main` | dernier commit | Branche de livraison |
+| `main` | `c2fd3e9` | Branche de livraison |
 | `QA` | = `main` | Miroir de `main` pour la revue finale |
+| `bug/limite-12-places-par-competition` | `2888853` | Mergée (`c2fd3e9`) |
 | `feature/admin-reservations-et-audit` | `89b7424` | Mergée (`a920309`) |
 | `feature/espace-club-p2` | `775f58e` | Mergée (`7f05d3a`) |
 | `feature/espace-club-reservations-historique` | `1302182` | Mergée |
