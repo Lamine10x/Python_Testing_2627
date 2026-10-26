@@ -38,18 +38,60 @@
 
     .admin-header-inner {
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       justify-content: space-between;
       gap: 20px;
     }
 
+    .header-profile-block {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .club-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius);
+      background: var(--dark);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      flex-shrink: 0;
+    }
+
+    .header-points-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: var(--bg-2);
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius);
+      font-size: 0.84rem;
+      color: var(--text);
+    }
+
+    .badge-status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      display: inline-block;
+      margin-right: 5px;
+    }
+
     .admin-eyebrow {
+      display: inline-flex;
+      align-items: center;
       font-size: 0.72rem;
       font-weight: 600;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--text-subtle);
-      margin-bottom: 5px;
+      margin-bottom: 4px;
     }
 
     .admin-title {
@@ -58,6 +100,7 @@
       font-weight: 700;
       letter-spacing: -0.025em;
       color: var(--text);
+      line-height: 1.2;
     }
 
     .admin-content {
@@ -293,11 +336,24 @@
     <div class="admin-header">
       <div class="container">
         <div class="admin-header-inner">
-          <div>
-            <p class="admin-eyebrow">Administration</p>
-            <h1 class="admin-title">{% block page_title %}Tableau de bord{% endblock %}</h1>
+          <div class="header-profile-block">
+            <div class="club-avatar" style="background:#0f172a;" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:24px;height:24px;stroke-width:2;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div>
+              <p class="admin-eyebrow">
+                <span class="badge-status-dot"></span>
+                Console Administrateur · Accès restreint
+              </p>
+              <h1 class="admin-title">{% block page_title %}Tableau de bord{% endblock %}</h1>
+            </div>
           </div>
-          <span class="badge badge-dark">{{ admin_name|default('Administrateur') }}</span>
+          <div class="header-actions">
+            <div class="header-points-pill">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false" style="width:14px;height:14px;stroke-width:2;"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Connecté en tant que <strong>{{ admin_name|default('Super Admin') }}</strong></span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
