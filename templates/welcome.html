@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -12,7 +12,7 @@
     .page-header {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 28px 0;
+      padding: 32px 0;
       animation: fadeDown 0.4s ease both;
     }
 
@@ -23,40 +23,106 @@
 
     .header-inner {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
-      gap: 20px;
+      gap: 24px;
+    }
+
+    .header-profile-block {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .club-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius);
+      background: var(--dark);
+      color: #ffffff;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: -0.02em;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      flex-shrink: 0;
     }
 
     .header-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       font-size: 0.72rem;
       font-weight: 600;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--text-subtle);
       margin-bottom: 4px;
     }
 
+    .badge-status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      display: inline-block;
+    }
+
     .header-title {
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 1.5rem;
+      font-size: 1.65rem;
       font-weight: 700;
       letter-spacing: -0.025em;
       color: var(--text);
+      line-height: 1.2;
     }
 
     .header-meta {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
       font-size: 0.82rem;
       color: var(--text-muted);
       margin-top: 6px;
     }
 
+    .header-meta-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
     .header-meta svg { width: 14px; height: 14px; stroke-width: 2; }
 
-    .header-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .header-points-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: var(--bg-2);
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .header-points-pill svg {
+      width: 15px;
+      height: 15px;
+      stroke-width: 2;
+      color: var(--text-muted);
+    }
 
     /* STATS */
     .stats-grid {
@@ -448,16 +514,33 @@
         {% endwith %}
 
         <div class="header-inner">
-          <div>
-            <p class="header-label">Tableau de bord</p>
-            <h1 class="header-title">{{ club['name'] }}</h1>
-            <div class="header-meta">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              {{ club['email'] }}
+          <div class="header-profile-block">
+            <div class="club-avatar" aria-hidden="true">
+              {{ club['name'][:2]|upper }}
+            </div>
+            <div>
+              <p class="header-label">
+                <span class="badge-status-dot"></span>
+                Espace Club · Compte certifié
+              </p>
+              <h1 class="header-title">{{ club['name'] }}</h1>
+              <div class="header-meta">
+                <span class="header-meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  {{ club['email'] }}
+                </span>
+                <span class="header-meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Session active
+                </span>
+              </div>
             </div>
           </div>
           <div class="header-actions">
-            <span class="badge badge-default">{{ club['points'] }} pts disponibles</span>
+            <div class="header-points-pill">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <span><strong>{{ club['points'] }}</strong> pts disponibles</span>
+            </div>
           </div>
         </div>
       </div>
