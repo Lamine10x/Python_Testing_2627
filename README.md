@@ -1,502 +1,187 @@
-# GUDLFT — Plateforme de réservation de compétitions
+# GUDLFT — Réservation de compétitions
 
-Application Flask de démonstration pour la gestion des réservations de places
-de compétitions par les clubs de powerlifting.
+Application Flask développée dans le cadre du projet OpenClassrooms, permettant aux secrétaires de clubs de réserver des places pour les compétitions de powerlifting avec leurs points.
 
-Le projet couvre les correctifs de la Phase 1, le tableau public des points
-(Phase 2), un espace club enrichi (réservations, quota, historique complet,
-filtres et accessibilité) et une interface d'administration complète, y
-compris la gestion des réservations, l'annulation avec remboursement, la
-gestion des points, l'ouverture ou la fermeture des inscriptions et le
-journal d'audit global.
+---
 
 ## Sommaire
 
-- [Fonctionnalités](#fonctionnalités)
-- [Technologies](#technologies)
-- [Installation](#installation)
-- [Lancement](#lancement)
-- [Comptes de test](#comptes-de-test)
-- [Tests unitaires](#tests-unitaires)
-- [Rapport Flake8](#rapport-flake8)
-- [Tests de performance](#tests-de-performance)
-- [Ressources](#ressources)
-- [Conventions Git et workflow](#conventions-git-et-workflow)
-- [Structure du projet](#structure-du-projet)
+1. [Le projet](#le-projet)
+2. [Installation & Lancement](#installation--lancement)
+3. [Comptes pour tester](#comptes-pour-tester)
+4. [Tests & Qualité du code](#tests--qualité-du-code)
+5. [Tests de charge (Locust)](#tests-de-charge-locust)
+6. [Organisation Git](#organisation-git)
+7. [Structure des fichiers](#structure-des-fichiers)
 
-## Fonctionnalités
+---
 
-### Phase 1 — Correctifs
+## Le projet
 
-- Gestion propre des emails inconnus lors de la connexion (HTTP 401).
-- Gestion des clubs et compétitions inconnus (HTTP 404).
-- Blocage des réservations pour une compétition déjà passée.
-- Validation des places saisies : nombre positif et entier.
-- Limite stricte de 12 places au total par compétition (tous clubs confondus
-  et par club), réservations cumulées incluses.
-- Blocage des réservations si les points du club sont insuffisants.
-- Blocage de la surréservation par rapport aux places restantes.
-- Déduction correcte des points du club après réservation.
-- Harmonisation des types numériques lus depuis les fichiers JSON.
-- Correction des balises HTML invalides et des formulaires.
-- Nettoyage complet de la session à la déconnexion avec message de confirmation.
-- Mise en conformité PEP8 et correction des alertes Flake8.
+L'application d'origine comportait plusieurs dysfonctionnements et manques fonctionnels. Le travail a consisté à assainir la base de code, corriger les bugs critiques, ajouter le tableau d'affichage public et compléter l'espace de gestion.
 
-### Phase 2 — Tableau public des points
+### Règles de réservation
+- **1 place = 1 point**.
+- **Limite de 12 places** par compétition : un club ne peut pas inscrire plus de 12 athlètes sur une même compétition, et le cumul de tous les clubs ne peut pas dépasser 12 places au total.
+- **Solde non négatif** : impossible de réserver plus de places que le solde de points disponible.
+- **Dates passées** : les compétitions terminées ne sont plus ouvertes à la réservation.
 
-- Page publique accessible sans connexion :
-  - `/displayBoard`
-  - alias `/points`
-- Affichage de tous les clubs et de leurs points, triés par points décroissants.
-- Classement avec mise en avant des trois premiers clubs.
-- Sélecteur de compétition sur le classement public :
-  - classement général des points des clubs ;
-  - classement par compétition basé sur les places réservées ;
-  - affichage de la date, des places restantes et de l'état des inscriptions ;
-  - état vide lorsqu'aucune place n'a encore été réservée.
-- Exemple de classement par compétition :
-  `/displayBoard?competition=Future%20Open`.
-- Liens vers le classement depuis la page d'accueil et le tableau de bord club.
-- Les réservations sont enregistrées dans le champ `booked` de chaque club,
-  ce qui permet de conserver le classement par compétition après redémarrage.
+### Espace Club (`/`)
+- Connexion sécurisée par email de secrétaire.
+- Tableau de bord avec solde de points, places réservées, prochaines échéances et alertes sur les places libérées.
+- Formulaire de réservation contrôlé (nombre entier positif, calcul du quota restant, déduction automatique des points).
+- Historique complet des opérations de points (débits de réservation, remboursements, ajustements).
 
-### Espace club — réservations et points
+### Classement public (`/displayBoard` ou `/points`)
+- Accessible sans être connecté.
+- Classement général des clubs triés par points.
+- Classement par compétition pour visualiser la répartition des places réservées.
 
-- Tableau de bord club avec six indicateurs : points disponibles, places
-  réservées, points consommés, prochaine échéance, inscriptions ouvertes et
-  compétitions totales.
-- Bloc « Prochaines échéances » avec les trois prochaines compétitions, leur
-  date, les places restantes et le nombre de jours restants.
-- Bloc « Places libérées récemment » alimenté par le journal d'audit : le club
-  voit immédiatement les places rendues par les autres clubs, sans attendre la
-  mise à jour du classement.
-- Section « Mes réservations » :
-  - compétitions déjà réservées par le club ;
-  - nombre de places réservées ;
-  - points engagés ;
-  - quota restant sur les 12 places autorisées ;
-  - statut de la réservation : confirmée, terminée ou inscriptions fermées ;
-  - filtres serveur par statut et par compétition, avec réinitialisation ;
-  - barre de progression accessible pour visualiser le quota consommé.
-- Affichage du quota restant et du nombre de places déjà réservées sur
-  chaque carte de compétition.
-- Calcul du maximum réservable à partir de trois contraintes :
-  - quota restant du club pour la compétition ;
-  - places encore disponibles dans la compétition ;
-  - solde de points du club.
-- Formulaire de réservation enrichi :
-  - rappel des places disponibles, du solde de points, des places déjà
-    réservées et du maximum réservable ;
-  - attribut `max` aligné sur le maximum réellement réservable ;
-  - récapitulatif dynamique du coût, du solde après réservation et du quota
-    après réservation ;
-  - conservation de la saisie lorsqu'une erreur de validation est détectée.
-- Redirection Post/Redirect/Get (HTTP 303) après une réservation réussie,
-  avec message de confirmation et retour sur la section « Mes réservations ».
-- Historique des points côté club :
-  - affichage de l'historique complet, sans limite aux dix derniers mouvements ;
-  - distinction entre réservation, remboursement et ajustement administrateur ;
-  - date, motif, variation et solde après opération ;
-  - enregistrement automatique du débit de points lors d'une réservation.
-- Accessibilité renforcée :
-  - lien d'évitement vers le contenu principal ;
-  - navigation et formulaires libellés en ARIA ;
-  - tableaux avec légendes, en-têtes `scope="col"` et barres de progression
-    accessibles ;
-  - messages flash annoncés via `role="status"` et `aria-live` ;
-  - styles de focus visibles au clavier ;
-  - icônes décoratives masquées aux lecteurs d'écran.
-- Messages flash différenciés : succès, erreur et information.
-- Route `GET /dashboard/<club>` utilisée comme cible de la redirection après
-  réservation et pour appliquer les filtres.
-- Chaque réservation est tracée dans le journal d'audit global `audit.json`.
+### Espace Administration (`/admin/login`)
+- Accès sécurisé par mot de passe en session.
+- Gestion des clubs et des compétitions (création, mise à jour, suppression).
+- Gestion des points (crédit / débit contrôlé avec motif obligatoire).
+- Ouverture / fermeture manuelle des inscriptions d'une compétition.
+- Annulation de réservation avec remboursement automatique des points au club.
+- Journal d'audit (`audit.json`) traçant les connexions, modifications et réservations.
 
+---
 
-### Interface d'administration
+## Installation & Lancement
 
-- Connexion et déconnexion administrateur protégées par session.
-- Tableau de bord avec six indicateurs :
-  - nombre de clubs ;
-  - nombre de compétitions ;
-  - total des points ;
-  - réservations actives ;
-  - places réservées ;
-  - nombre d'entrées d'audit.
-- Gestion des réservations :
-  - vue consolidée par club et compétition ;
-  - filtres par club, compétition et statut ;
-  - indicateurs des places réservées et des points remboursables ;
-  - formulaire d'annulation partielle ou totale ;
-  - remboursement automatique de 1 point par place annulée ;
-  - remise immédiate des places dans la compétition ;
-  - mise à jour de la réservation du club et de son historique de points ;
-  - message de confirmation avec le nouveau solde.
-- Journal d'audit global :
-  - conservation des 500 dernières opérations dans `audit.json` ;
-  - traçabilité des connexions et déconnexions administrateur ;
-  - traçabilité des ajouts, modifications et suppressions de clubs ;
-  - traçabilité des crédits et débits de points ;
-  - traçabilité des ajouts, modifications et suppressions de compétitions ;
-  - traçabilité de l'ouverture et de la fermeture des inscriptions ;
-  - traçabilité des réservations et des annulations/remboursements ;
-  - filtres par catégorie, action et acteur ;
-  - affichage de l'acteur, de la cible, de la date et d'un résumé lisible.
-- Gestion complète des clubs :
-  - liste ;
-  - ajout ;
-  - modification ;
-  - suppression.
-- Gestion complète des compétitions :
-  - liste ;
-  - ajout ;
-  - modification ;
-  - suppression.
-- Gestion des points des clubs :
-  - crédit ou débit d'un montant entier positif ;
-  - motif facultatif ;
-  - contrôle du solde pour interdire un solde négatif ;
-  - historique complet et horodaté des mouvements avec l'administrateur, le
-    type, le motif et le solde après opération.
-- Ouverture et fermeture des inscriptions par compétition :
-  - bouton d'action direct depuis la liste des compétitions ;
-  - case à cocher dans les formulaires d'ajout et de modification ;
-  - blocage des réservations lorsque les inscriptions sont fermées ;
-  - affichage de l'état sur le tableau de bord club.
-- Templates dédiés dans `templates/admin/`.
-- Routes principales : `/admin/reservations`, `/admin/audit` et
-  `/admin/reservations/<club>/<competition>/cancel`.
-- Identifiants stockés dans `admin.json`.
-- Les ajustements de points sont conservés dans le champ `points_history`
-  de chaque club ; l'état des inscriptions est stocké dans le champ
-  `registration_open` de chaque compétition.
-- Accès rapide : dans `Admin > Clubs`, le bouton `Points` ouvre la gestion
-  des points ; dans `Admin > Compétitions`, le bouton `Fermer` ou `Ouvrir`
-  change l'état des inscriptions.
+### Prérequis
+- Python 3.10 ou supérieur
+- Git
 
-## Technologies
-
-- Python 3.x
-- Flask 1.1.2
-- Jinja2
-- pytest et pytest-cov
-- Flake8
-- Locust
-- Fichiers JSON comme base de données légère
-
-## Installation
-
-Depuis PowerShell, à la racine du projet :
+### Installation
 
 ```powershell
+# Cloner le dépôt
+git clone https://github.com/Lamine10x/Python_Testing_2627.git
+cd Python_Testing_2627
+
+# Créer et activer l'environnement virtuel
 python -m venv env
 .\env\Scripts\Activate.ps1
+
+# Installer les dépendances
 pip install -r requirements.txt
 ```
 
-Sous cmd.exe, l'activation se fait avec :
+*(Sur Linux/macOS : `source env/bin/activate`)*
 
-```bat
-env\Scripts\activate.bat
-```
-
-Sous Linux ou macOS :
-
-```bash
-source env/bin/activate
-```
-
-## Lancement
-
-Toujours depuis la racine du projet, avec l'environnement virtuel activé :
+### Démarrage local
 
 ```powershell
 $env:FLASK_APP = "server"
-$env:FLASK_ENV = "development"
 flask run
 ```
 
-Version en une seule ligne :
+L'application tourne sur **http://127.0.0.1:5000**.
+
+---
+
+## Comptes pour tester
+
+### Clubs (secrétaires)
+Pour se connecter sur l'accueil, utilisez simplement l'email d'un club :
+- `john@simplylift.co` (Simply Lift — 13 pts)
+- `kate@shelifts.co.uk` (She Lifts — 12 pts)
+- `admin@irontemple.com` (Iron Temple — 4 pts)
+
+### Administrateur
+Rendez-vous sur **http://127.0.0.1:5000/admin/login** :
+- **Email** : `admin@gudlft.com`
+- **Mot de passe** : `admin1234`
+
+*(Ces identifiants sont configurables dans `admin.json`).*
+
+---
+
+## Tests & Qualité du code
+
+### Lancer la suite de tests
+
+Le projet utilise **pytest** avec une couverture totale du fichier serveur :
 
 ```powershell
-$env:FLASK_APP="server"; $env:FLASK_ENV="development"; flask run
-```
-
-Adresses utiles :
-
-- Application club : <http://127.0.0.1:5000>
-- Classement public : <http://127.0.0.1:5000/displayBoard>
-- Administration : <http://127.0.0.1:5000/admin/login>
-
-Les variables d'environnement sont valables uniquement pour la session
-PowerShell en cours.
-
-## Comptes de test
-
-### Clubs
-
-| Email | Club |
-| --- | --- |
-| `john@simplylift.co` | Simply Lift |
-| `admin@irontemple.com` | Iron Temple |
-| `kate@shelifts.co.uk` | She Lifts |
-
-### Administration
-
-| Champ | Valeur |
-| --- | --- |
-| Email | `admin@gudlft.com` |
-| Mot de passe | `admin1234` |
-| URL | <http://127.0.0.1:5000/admin/login> |
-
-Les identifiants administrateur peuvent être modifiés dans `admin.json`.
-Pensez à changer le mot de passe par défaut avant tout déploiement réel.
-
-## Tests unitaires
-
-Lancer tous les tests :
-
-```powershell
+# Lancer tous les tests
 pytest tests/
+
+# Avec rapport de couverture
+pytest --cov=server --cov-report=term-missing tests/
 ```
 
-Lancer les tests avec le rapport de couverture :
+> **État actuel** : 136 tests passés avec succès, 100 % de couverture sur `server.py`.
+
+### Linting (PEP8 / Flake8)
+
+Le code respecte strictement les normes PEP8 :
 
 ```powershell
-pytest --cov=server tests/
+flake8 --exclude=env
 ```
 
-Générer un rapport HTML de couverture :
-
-```powershell
-pytest --cov=server --cov-report=html tests/
-```
-
-Le rapport HTML est disponible dans `htmlcov/index.html`.
-
-### Résultat actuel
-
-```text
-136 tests passent
-Couverture de server.py : 100 %
-```
-
-## Rapport Flake8
-
-Commande utilisée :
-
-```powershell
-flake8 server.py tests/ locustfile.py generate_flake8_report.py --count --statistics --show-source
-```
-
-Générer le rapport HTML :
-
+Pour générer un rapport visuel :
 ```powershell
 python generate_flake8_report.py
 ```
+Le fichier généré est consultable dans `rapport_flake8.html` (0 erreur).
 
-Puis ouvrir `rapport_flake8.html` dans le navigateur.
+---
 
-Résultat :
+## Tests de charge (Locust)
 
-```text
-Version Flake8 : 7.4.1
-Fichiers analysés : server.py, tests/, locustfile.py,
-                    generate_flake8_report.py
-Nombre d'erreurs : 0
-```
-
-Aucune erreur PEP8 / Flake8 n'a été détectée.
-
-## Tests de performance
-
-L'application Flask doit être lancée avant de démarrer Locust.
-
-Lancer Locust avec l'interface web :
+Des tests de performance ont été exécutés avec Locust pour vérifier la réactivité du serveur :
 
 ```powershell
+# Avec interface web sur http://localhost:8089
 locust -f locustfile.py --host http://127.0.0.1:5000
+
+# Ou directement en ligne de commande avec export HTML
+locust -f locustfile.py --headless -u 6 -r 1 -t 30s --host http://127.0.0.1:5000 --html=rapport_locust.html
 ```
 
-Puis ouvrir <http://localhost:8089> et renseigner :
+**Résultats constatés (6 utilisateurs / 30s) :**
+- 0 requête en échec.
+- Temps de réponse moyen : ~2 ms (largement sous le seuil demandé de 2s / 5s).
 
-- 6 utilisateurs ;
-- taux d'apparition : 1 utilisateur/seconde.
+---
 
-Lancer un test sans interface graphique et générer le rapport HTML :
+## Organisation Git
 
-```powershell
-locust -f locustfile.py --headless -u 6 -r 1 -t 30s `
-  --host http://127.0.0.1:5000 --html=rapport_locust.html
-```
+Le projet suit un workflow par branches thématiques :
+- `main` : branche principale stable.
+- `QA` : branche de validation.
+- `bug/<nom>` : branches de correctifs ciblés.
+- `feature/<nom>` : branches pour les nouveaux modules.
 
-Le scénario simule la consultation de l'accueil, la connexion d'un club,
-le classement public, le formulaire de réservation et les routes admin.
+Chaque branche est intégrée avec `--no-ff` pour conserver un historique clair et lisible dans l'arbre Git.
 
-Le rapport HTML est disponible dans `rapport_locust.html`.
+---
 
-### Dernier test de performance
-
-Test réalisé avec 6 utilisateurs pendant 30 secondes :
-
-```text
-Requêtes        : 97
-Échecs          : 0
-Temps moyen     : 2 ms
-95e percentile  : 4 ms
-Temps maximum   : 7 ms
-```
-
-Les seuils du cahier des charges sont respectés :
-
-- liste des compétitions : moins de 5 secondes ;
-- mise à jour des points : moins de 2 secondes.
-
-## Ressources
-
-- Dépôt GitHub : <https://github.com/Lamine10x/Python_Testing_2627>
-- Documentation Flask : <https://flask.palletsprojects.com/>
-- Documentation pytest : <https://docs.pytest.org/>
-- Documentation Flake8 : <https://flake8.pycqa.org/>
-- Documentation Locust : <https://docs.locust.io/>
-
-## Conventions Git et workflow
-
-### Nommage des branches
-
-- Branche principale : `main`.
-- Branches de travail : `<type>/nom-descriptif`, par exemple
-  `bug/correction-reservation`, `feature/tableau-public` ou
-  `docs/documentation-pdf`.
-- Types utilisés : `bug/`, `feature/`, `improvement/` et `docs/`.
-- Une branche porte un seul correctif ou une seule fonctionnalité.
-- Les branches mergées sont conservées pour garder la traçabilité.
-
-### Workflow de livraison
-
-1. Créer la branche depuis `main` avant de commencer :
-
-   ```powershell
-   git switch main
-   git pull origin main
-   git switch -c feature/nom-de-la-fonctionnalite
-   ```
-
-2. Développer, tester et commiter sur la branche.
-
-3. Pousser la branche et, si nécessaire, ouvrir une pull request :
-
-   ```powershell
-   git push -u origin feature/nom-de-la-fonctionnalite
-   ```
-
-4. Intégrer dans `main` avec un commit de merge explicite :
-
-   ```powershell
-   git switch main
-   git merge --no-ff feature/nom-de-la-fonctionnalite `
-     -m "Merge : nom de la fonctionnalite"
-   git push origin main
-   ```
-
-5. Après validation, aligner `QA` sur `main` :
-
-   ```powershell
-   git branch -f QA main
-   git push --force-with-lease origin QA
-   ```
-
-Le merge `--no-ff` est obligatoire même lorsque Git pourrait faire un
-fast-forward : l'historique doit garder une trace visible de la branche.
-
-### État des branches
-
-Au moment de cette mise à jour, toutes les branches de travail sont mergées
-dans `main` :
-
-| Branche | Commit | État |
-| --- | --- | --- |
-| `main` | `c2fd3e9` | Branche de livraison |
-| `QA` | = `main` | Miroir de `main` pour la revue finale |
-| `bug/limite-12-places-par-competition` | `2888853` | Mergée (`c2fd3e9`) |
-| `feature/admin-reservations-et-audit` | `89b7424` | Mergée (`a920309`) |
-| `feature/espace-club-p2` | `775f58e` | Mergée (`7f05d3a`) |
-| `feature/espace-club-reservations-historique` | `1302182` | Mergée |
-| `docs/etat-branches-lot-admin` | — | Mergée |
-| `docs/retrait-reference-pdf-supprime` | — | Mergée |
-| `docs/pdf-documentation-fonctionnalites-bugs` | — | Mergée |
-| `feature/gestion-points-et-inscriptions` | `06cd9b0` | Mergée |
-| `feature/classement-public-par-competition` | `8e5f975` | Mergée |
-| `feature/tableau-de-bord-admin` | `88aa5ca` | Mergée |
-| `feature/tableau-public-points-clubs` | `9c4b08a` | Mergée |
-| `bug/...` | — | Toutes mergées |
-
-Historique récent :
-
-```text
-*   Merge : reservations admin annulation remboursement et audit global
-|\
-| * Feature : reservations admin annulation remboursement et audit global
-|/
-*   Merge : espace club filtres accessibilite et dashboard enrichi
-|\
-| * Feature : filtres accessibilite et tableau de bord club enrichi
-|/
-*   Merge : retrait reference PDF supprime
-|\
-| * Docs : retrait reference PDF supprime
-|/
-*   Merge : espace club reservations et historique
-|\
-| * Feature : mes reservations quota et historique des points
-|/
-*   Merge : documentation PDF fonctionnalites et bugs
-|\
-| * Docs : ajout du PDF de documentation
-* |   Merge : classement public par competition
-|\ \
-| |/
-| * Feature : classement public par competition
-* |   Merge : gestion des points et des inscriptions
-|\ \
-| |/
-| * Feature : gestion des points et des inscriptions
-|/
-* Fix : chargement de admin.json avec BOM UTF-8
-```
-
-Vérification :
-
-```powershell
-git branch --no-merged main
-git branch -r --no-merged main
-```
-
-Les deux commandes ne doivent retourner aucune branche.
-
-## Structure du projet
+## Structure des fichiers
 
 ```text
 .
-├── server.py                 # Application Flask et routes
-├── clubs.json                # Clubs et points
-├── competitions.json         # Compétitions et places
-├── admin.json                # Comptes administrateur
-├── audit.json                # Journal d'audit global
-├── locustfile.py             # Scénario de test de performance
-├── generate_flake8_report.py # Générateur du rapport Flake8 HTML
-├── rapport_flake8.html       # Rapport Flake8 généré
-├── rapport_locust.html       # Rapport de performance Locust
+├── server.py                 # Application Flask, routes et logique métier
+├── clubs.json                # Données des clubs, points et réservations
+├── competitions.json         # Données des compétitions et places
+├── admin.json                # Identifiants administrateurs
+├── audit.json                # Historique du journal d'audit
 ├── requirements.txt          # Dépendances Python
+├── locustfile.py             # Script de test de charge Locust
+├── generate_flake8_report.py # Script pour générer le rapport Flake8 HTML
 ├── static/
 │   └── css/
-│       └── style.css         # Styles de l'application
+│       └── style.css         # Feuilles de style
 ├── templates/
-│   ├── index.html
-│   ├── welcome.html
-│   ├── booking.html
-│   ├── display_board.html
-│   └── admin/                # Templates d'administration
+│   ├── index.html            # Page d'accueil / connexion club
+│   ├── welcome.html          # Espace secrétaire de club
+│   ├── booking.html          # Formulaire de réservation
+│   ├── display_board.html    # Classement public des points
+│   └── admin/                # Espace d'administration
 └── tests/
-    ├── conftest.py
+    ├── conftest.py           # Fixtures de test
     └── unit/                 # Tests unitaires
 ```
