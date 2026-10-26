@@ -83,3 +83,40 @@ def test_surreservation_places_competition_refusee(client):
 
     texte_reponse = html.unescape(response.get_data(as_text=True))
     assert "places disponibles" in texte_reponse
+
+
+def test_reservation_globale_multi_clubs_limite_12_places_refusee(client):
+    """Vérifie le blocage à 12 places au total pour tous clubs confondus."""
+    from server import clubs, competitions
+
+    club_1 = [c for c in clubs if c['name'] == 'Simply Lift'][0]
+    club_2 = [c for c in clubs if c['name'] == 'Iron Temple'][0]
+    competition = [c for c in competitions if c['name'] == 'Future Open'][0]
+
+    club_1.setdefault('booked', {})[competition['name']] = 0
+    club_2.setdefault('booked', {})[competition['name']] = 0
+
+    # Club 1 réserve 7 places
+    response_1 = client.post('/purchasePlaces', data={
+        'club': club_1['name'],
+        'competition': competition['name'],
+        'places': '7'
+    }, follow_redirects=True)
+    assert response_1.status_code == 200
+
+    # Club 2 essaie d'en réserver 6 (7 + 6 = 13 > 12 places globales)
+    club_2_points_before = int(club_2['points'])
+    places_before = int(competition['numberOfPlaces'])
+
+    response_2 = client.post('/purchasePlaces', data={
+        'club': club_2['name'],
+        'competition': competition['name'],
+        'places': '6'
+    })
+
+    assert response_2.status_code == 400
+    assert int(club_2['points']) == club_2_points_before
+    assert int(competition['numberOfPlaces']) == places_before
+
+    texte_reponse = html.unescape(response_2.get_data(as_text=True))
+    assert "12 places" in texte_reponse

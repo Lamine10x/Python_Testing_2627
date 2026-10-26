@@ -154,10 +154,22 @@ def getBookedPlaces(club, competition):
     return int(club.get('booked', {}).get(competition['name'], 0))
 
 
+def getTotalBookedPlaces(competition):
+    """Calcule le total des places réservées tous clubs confondus."""
+    total = 0
+    for c in clubs:
+        total += int(c.get('booked', {}).get(competition['name'], 0))
+    return total
+
+
 def getQuotaRemaining(club, competition):
-    return max(
-        0, MAX_PLACES_PER_COMPETITION - getBookedPlaces(club, competition)
+    club_quota = (
+        MAX_PLACES_PER_COMPETITION - getBookedPlaces(club, competition)
     )
+    global_quota = MAX_PLACES_PER_COMPETITION - getTotalBookedPlaces(
+        competition
+    )
+    return max(0, min(club_quota, global_quota))
 
 
 def getMaxBookable(club, competition):
@@ -171,6 +183,7 @@ def getMaxBookable(club, competition):
 def getCompetitionState(club, competition, now=None):
     now = now or datetime.now()
     booked = getBookedPlaces(club, competition)
+    total_booked = getTotalBookedPlaces(competition)
     quota = getQuotaRemaining(club, competition)
     places = max(0, int(competition['numberOfPlaces']))
     points = max(0, int(club['points']))
@@ -207,6 +220,7 @@ def getCompetitionState(club, competition, now=None):
 
     return {
         'booked': booked,
+        'total_booked': total_booked,
         'quota_remaining': quota,
         'max_bookable': max_bookable,
         'places_remaining': places,
@@ -578,6 +592,7 @@ def renderClubDashboard(club, status=200, filters=None):
 def getBookingContext(club, competition):
     return {
         'already_booked': getBookedPlaces(club, competition),
+        'total_booked': getTotalBookedPlaces(competition),
         'quota_remaining': getQuotaRemaining(club, competition),
         'max_bookable': getMaxBookable(club, competition),
     }
@@ -736,9 +751,13 @@ def purchasePlaces():
         return renderBooking(club, competition, 400, form_places)
 
     already_booked = getBookedPlaces(club, competition)
+    total_booked = getTotalBookedPlaces(competition)
     quota_remaining = getQuotaRemaining(club, competition)
 
-    if already_booked + placesRequired > MAX_PLACES_PER_COMPETITION:
+    if (
+        already_booked + placesRequired > MAX_PLACES_PER_COMPETITION
+        or total_booked + placesRequired > MAX_PLACES_PER_COMPETITION
+    ):
         flash(
             "Vous ne pouvez pas réserver plus de "
             f"{MAX_PLACES_PER_COMPETITION} places au total "
@@ -1213,9 +1232,20 @@ def adminDeleteClub(club_name):
 @app.route('/admin/competitions')
 @admin_required
 def adminCompetitions():
+    enriched_competitions = []
+    for comp in competitions:
+        total_booked = getTotalBookedPlaces(comp)
+        enriched_competitions.append({
+            **comp,
+            'total_booked': total_booked,
+            'max_capacity': MAX_PLACES_PER_COMPETITION,
+            'global_quota_remaining': max(
+                0, MAX_PLACES_PER_COMPETITION - total_booked
+            ),
+        })
     return render_template(
         'admin/competitions.html',
-        competitions=competitions,
+        competitions=enriched_competitions,
         admin_name=session.get('admin_name')
     )
 
