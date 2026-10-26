@@ -138,6 +138,8 @@ def test_admin_competitions_list(client):
     assert '2099-06-15 10:00:00' in content
     assert 'Ajouter une compétition' in content
     assert 'Ouvertes' in content
+    assert 'Réservations (Total/12)' in content
+    assert '0/12' in content
 
 
 def test_admin_add_club(client):

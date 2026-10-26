@@ -20,7 +20,8 @@
       <tr>
         <th scope="col">Nom</th>
         <th scope="col">Date</th>
-        <th scope="col">Places</th>
+        <th scope="col">Places restantes</th>
+        <th scope="col">Réservations (Total/12)</th>
         <th scope="col">Inscriptions</th>
         <th scope="col" style="text-align:right;">Actions</th>
       </tr>
@@ -32,6 +33,11 @@
         <td class="name-col">{{ comp['name'] }}</td>
         <td>{{ comp['date'] }}</td>
         <td><span class="badge badge-default">{{ comp['numberOfPlaces'] }} places</span></td>
+        <td>
+          <span class="badge {% if comp.get('total_booked', 0) >= 12 %}badge-danger{% else %}badge-default{% endif %}">
+            {{ comp.get('total_booked', 0) }}/12
+          </span>
+        </td>
         <td>
           {% if is_open %}
           <span class="badge badge-success">Ouvertes</span>

@@ -32,8 +32,8 @@ journal d'audit global.
 - Gestion des clubs et compétitions inconnus (HTTP 404).
 - Blocage des réservations pour une compétition déjà passée.
 - Validation des places saisies : nombre positif et entier.
-- Limite stricte de 12 places par club et par compétition, réservations
-  cumulées incluses.
+- Limite stricte de 12 places au total par compétition (tous clubs confondus
+  et par club), réservations cumulées incluses.
 - Blocage des réservations si les points du club sont insuffisants.
 - Blocage de la surréservation par rapport aux places restantes.
 - Déduction correcte des points du club après réservation.
